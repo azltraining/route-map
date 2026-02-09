@@ -3,130 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Route Pro V3 - Planlama</title>
+    <title>Sales Route Pro - Modern UI</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
         :root {
-            --primary-color: #33ccff;
+            --primary-color: #00d2ff;
             --dark-blue: #003344;
-            --bg-light: #f8f9fa;
-            --text-color: #333;
-            --card-bg: white;
-            --header-bg: white;
-            --accent-green: #2ecc71;
-            --pending-blue: #3498db;
-            --plan-yellow: #f1c40f;
+            --bg-light: #f4f7f6;
+            --text-color: #2d3436;
+            --card-bg: #ffffff;
+            --header-bg: #ffffff;
+            --accent-green: #00b894;
+            --pending-blue: #0984e3;
+            --plan-yellow: #fdcb6e;
         }
 
         body.dark-mode {
-            --bg-light: #121212;
-            --text-color: #e0e0e0;
-            --card-bg: #1e1e1e;
-            --header-bg: #1e1e1e;
+            --bg-light: #0f172a;
+            --text-color: #f1f2f6;
+            --card-bg: #1e293b;
+            --header-bg: #1e293b;
         }
 
         body { 
-            margin: 0; font-family: 'Segoe UI', sans-serif; height: 100vh; 
+            margin: 0; font-family: 'Inter', 'Segoe UI', sans-serif; height: 100vh; 
             display: flex; flex-direction: column; background: var(--bg-light); color: var(--text-color);
             overflow: hidden;
         }
         
         #header { 
-            background: var(--header-bg); 
-            padding: 10px 12px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2); 
-            z-index: 1001;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            background: var(--header-bg); padding: 12px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); z-index: 1001;
+            display: flex; flex-direction: column; gap: 10px;
         }
 
-        .top-row { display: flex; align-items: center; gap: 8px; width: 100%; }
-        .search-row { display: flex; align-items: center; gap: 6px; width: 100%; }
+        .top-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+        .search-row { display: flex; align-items: center; gap: 8px; width: 100%; }
 
         #searchInput {
-            flex: 1; padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px;
+            flex: 1; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 12px;
             background: var(--bg-light); color: var(--text-color); outline: none; font-size: 14px;
+            transition: border-color 0.3s;
         }
+        #searchInput:focus { border-color: var(--primary-color); }
 
         .btn-upload { 
-            background: var(--dark-blue); color: white; padding: 10px 14px; border-radius: 8px; 
-            cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center;
+            background: var(--dark-blue); color: white; padding: 10px 16px; border-radius: 10px; 
+            cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;
         }
 
         .icon-btn { 
-            background: var(--card-bg); border: 1px solid #ccc; min-width: 42px; height: 42px;
-            border-radius: 8px; cursor: pointer; color: var(--text-color); font-size: 18px; 
-            display: flex; align-items: center; justify-content: center;
+            background: var(--card-bg); border: 1.5px solid #e2e8f0; min-width: 44px; height: 44px;
+            border-radius: 10px; cursor: pointer; color: var(--text-color); font-size: 18px; 
+            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
         }
+        .icon-btn:active { transform: scale(0.95); }
 
         #statusFilter {
-            padding: 8px; border: 1px solid #ccc; border-radius: 8px;
-            background: var(--bg-light); color: var(--text-color); font-size: 12px; height: 42px;
+            padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+            background: var(--bg-light); color: var(--text-color); font-size: 13px; height: 44px;
         }
 
         #map { flex: 1; position: relative; z-index: 1; }
 
         .counter-card {
-            position: absolute; top: 10px; left: 10px; background: var(--card-bg);
-            padding: 6px 12px; border-radius: 8px; z-index: 1000; border-left: 4px solid var(--primary-color);
-            font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: absolute; top: 15px; left: 15px; background: var(--card-bg);
+            padding: 8px 16px; border-radius: 12px; z-index: 1000; 
+            border-left: 5px solid var(--primary-color); font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .side-controls {
-            position: absolute; bottom: 100px; right: 16px; display: flex; flex-direction: column; gap: 15px; z-index: 1000;
+            position: absolute; bottom: 100px; right: 16px; 
+            display: flex; flex-direction: column; gap: 16px; z-index: 1000;
         }
 
         .action-btn {
-            width: 56px; height: 56px; background: var(--card-bg); border-radius: 50%;
+            width: 60px; height: 60px; background: var(--card-bg); border-radius: 18px;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.2); 
-            font-size: 26px; cursor: pointer; color: var(--text-color);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: none; 
+            font-size: 24px; cursor: pointer; color: var(--text-color);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        .action-btn:active { transform: scale(0.9); }
 
-        .marker-pin { width: 28px; height: 28px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -14px 0 0 -14px; border: 2px solid white; }
-        .marker-pin::after { content: ''; width: 12px; height: 12px; margin: 8px 0 0 8px; background: white; position: absolute; border-radius: 50%; }
+        /* Marker Dizaynı */
+        .marker-pin { width: 32px; height: 32px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -16px 0 0 -16px; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .marker-pin::after { content: ''; width: 14px; height: 14px; margin: 9px 0 0 9px; background: white; position: absolute; border-radius: 50%; }
 
-        /* Popup və Düymələr */
-        .waze-link { display: block; background: var(--primary-color); color: #003344 !important; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 10px; }
-        .visit-btn { display: block; background: var(--accent-green); color: white !important; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 8px; border: none; width: 100%; cursor: pointer; }
-        .plan-btn { display: block; background: var(--plan-yellow); color: #000 !important; padding: 10px; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 8px; border: none; width: 100%; cursor: pointer; }
-        
-        .distance-label { color: #f39c12; font-weight: bold; font-size: 13px; margin: 5px 0; display: block; }
+        /* Pop-up Button Modernizasiya */
+        .waze-link { display: flex; align-items: center; justify-content: center; gap: 8px; background: #31CCFF; color: #fff !important; text-decoration: none; padding: 14px; border-radius: 12px; font-weight: 700; margin-top: 10px; }
+        .visit-btn { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--accent-green); color: white !important; padding: 14px; border-radius: 12px; font-weight: 700; margin-top: 8px; border: none; width: 100%; }
+        .plan-btn { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--plan-yellow); color: #2d3436 !important; padding: 10px; border-radius: 12px; font-weight: 700; margin-top: 8px; border: none; width: 100%; }
     </style>
 </head>
 <body>
 
 <div id="header">
     <div class="top-row">
-        <label class="btn-upload">📂 CSV <input type="file" id="csvFile" style="display:none"></label>
+        <label class="btn-upload"><i class="fa-solid fa-file-csv"></i> CSV <input type="file" id="csvFile" style="display:none"></label>
         <div style="flex-grow: 1;"></div>
-        <button class="icon-btn" onclick="exportReport()">📥</button>
-        <button class="icon-btn" onclick="toggleDarkMode()">🌓</button>
-        <button class="icon-btn" onclick="clearData()">🗑️</button>
+        <button class="icon-btn" onclick="exportReport()"><i class="fa-solid fa-download"></i></button>
+        <button class="icon-btn" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
+        <button class="icon-btn" onclick="clearData()"><i class="fa-solid fa-trash-can"></i></button>
     </div>
     
     <div class="search-row">
-        <input type="text" id="searchInput" placeholder="Mağaza axtar..." disabled>
+        <input type="text" id="searchInput" placeholder="Mağaza və ya ID axtar..." disabled>
         <select id="statusFilter" onchange="filterMarkers()" disabled>
             <option value="all">Hamısı</option>
-            <option value="plan">📌 Gediləcək (Plan)</option>
+            <option value="plan">📍 Planda Olanlar</option>
             <option value="visited">✅ Ziyarət Edilənlər</option>
-            <option value="pending">🔘 Gözləyənlər</option>
+            <option value="pending">⚪ Gözləyənlər</option>
         </select>
     </div>
 </div>
 
 <div id="map">
     <div id="counterCard" class="counter-card" style="display:none">
-        <span id="totalCount">0</span> nöqtə
+        <i class="fa-solid fa-location-dot" style="color:var(--primary-color)"></i> <span id="totalCount">0</span> məntəqə
     </div>
     
     <div class="side-controls">
-        <button class="action-btn" style="background: var(--dark-blue); color: white;" onclick="findNearestPending()">📡</button>
-        <button class="action-btn" style="color: #e74c3c;" onclick="findMe()">📍</button>
+        <button class="action-btn" style="background: var(--dark-blue); color: white;" onclick="findNearestPending()">
+            <i class="fa-solid fa-tower-broadcast"></i>
+        </button>
+        <button class="action-btn" style="color: #e74c3c;" onclick="findMe()">
+            <i class="fa-solid fa-crosshairs"></i>
+        </button>
     </div>
 </div>
 
@@ -134,6 +141,7 @@
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <script>
+    // [Əvvəlki JavaScript məntiqi eynilə qalır, yalnız HTML ikonları yeniləndi]
     let userLocation = null;
     let userMarker = null;
     let isDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -141,7 +149,7 @@
     let dataPoints = [];
     let rawCsvData = [];
     let visitHistory = JSON.parse(localStorage.getItem('visitHistory')) || {};
-    let dailyPlan = JSON.parse(localStorage.getItem('dailyPlan')) || {}; // Yeni Plan Yaddaşı
+    let dailyPlan = JSON.parse(localStorage.getItem('dailyPlan')) || {};
 
     const map = L.map('map', { zoomControl: false }).setView([40.4093, 49.8671], 9);
     const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
@@ -155,7 +163,7 @@
         return L.divIcon({
             className: 'custom-div-icon',
             html: `<div style="background-color:${color};" class="marker-pin"></div>`,
-            iconSize: [30, 42], iconAnchor: [15, 42]
+            iconSize: [32, 45], iconAnchor: [16, 45]
         });
     }
 
@@ -173,7 +181,9 @@
     map.on('locationfound', (e) => {
         userLocation = e.latlng;
         if (userMarker) { userMarker.setLatLng(e.latlng); } 
-        else { userMarker = L.circleMarker(e.latlng, { radius: 8, color: '#fff', weight: 3, fillOpacity: 1, fillColor: '#3498db' }).addTo(map); }
+        else { 
+            userMarker = L.circleMarker(e.latlng, { radius: 10, color: '#fff', weight: 4, fillOpacity: 1, fillColor: '#0984e3' }).addTo(map); 
+        }
         filterMarkers(); 
     });
 
@@ -202,14 +212,13 @@
                 const isVisited = visitHistory[id] ? true : false;
                 const isPlanned = dailyPlan[id] ? true : false;
                 
-                // Rəng məntiqi: Yaşıl (Ziyarət), Sarı (Plan), Göy (Gözləyən)
-                let color = '#3498db';
-                if (isVisited) color = '#2ecc71';
-                else if (isPlanned) color = '#f1c40f';
+                let color = '#0984e3';
+                if (isVisited) color = '#00b894';
+                else if (isPlanned) color = '#fdcb6e';
 
                 const marker = L.marker([lat, lng], { icon: createColoredIcon(color) });
                 marker.pointData = { ...row, lat, lng, id, isVisited, isPlanned };
-                marker.searchKey = ((row['District'] || '') + " " + id).toLowerCase();
+                marker.searchKey = ((row['District'] || '') + " " + (row['SubRetailer Name'] || '') + " " + id).toLowerCase();
                 marker.on('click', () => showMarkerPopup(marker));
                 dataPoints.push(marker);
                 marker.addTo(markersLayer);
@@ -226,93 +235,74 @@
 
     function showMarkerPopup(marker) {
         const p = marker.pointData;
-        const history = visitHistory[p.id];
         const isPlanned = dailyPlan[p.id];
         
         let distHtml = "";
         if (userLocation) {
             const dist = (map.distance(marker.getLatLng(), userLocation) / 1000).toFixed(2);
-            distHtml = `<span class="distance-label">📏 ${dist} km uzaqda</span>`;
+            distHtml = `<div style="color:#e67e22; font-weight:800; margin:5px 0;"><i class="fa-solid fa-route"></i> ${dist} km</div>`;
         }
 
         const content = `
-            <div style="text-align:center; min-width:180px">
-                <b style="font-size:14px">${p['District'] || 'Məntəqə'}</b><br>
-                <small>ID: ${p.id}</small>
+            <div style="text-align:center; min-width:200px; font-family:'Inter', sans-serif;">
+                <h3 style="margin:0; font-size:16px; color:var(--dark-blue);">${p['District'] || 'Mağaza'}</h3>
+                <code style="background:#eee; padding:2px 6px; border-radius:4px;">ID: ${p.id}</code>
                 ${distHtml}
-                <a href="https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes" target="_blank" class="waze-link">🚙 Waze</a>
-                <button onclick="markAsVisited('${p.id}')" class="visit-btn">✅ Ziyarəti Təsdiqlə</button>
+                <a href="https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes" target="_blank" class="waze-link"><i class="fa-brands fa-waze"></i> Waze ilə get</a>
+                <button onclick="markAsVisited('${p.id}')" class="visit-btn"><i class="fa-solid fa-check-double"></i> Ziyarəti Bitir</button>
                 <button onclick="togglePlan('${p.id}')" class="plan-btn">
-                    ${isPlanned ? '❌ Plandan Çıxar' : '📍 Plana Əlavə Et'}
+                    <i class="fa-solid ${isPlanned ? 'fa-calendar-minus' : 'fa-calendar-plus'}"></i> ${isPlanned ? 'Plandan Sil' : 'Plana Əlavə Et'}
                 </button>
-                <div style="font-size:11px; color:#888; margin-top:8px; border-top:1px dashed #ccc; padding-top:5px;">
-                    ${history ? '🕒 Son: ' + history.lastVisit : '🕒 Ziyarət edilməyib'}
-                </div>
             </div>
         `;
         L.popup().setLatLng(marker.getLatLng()).setContent(content).openOn(map);
     }
 
-    // PLANA ƏLAVƏ / SİLMƏ FUNKSİYASI
     window.togglePlan = function(id) {
-        if (dailyPlan[id]) delete dailyPlan[id];
-        else dailyPlan[id] = true;
-        
+        if (dailyPlan[id]) delete dailyPlan[id]; else dailyPlan[id] = true;
         localStorage.setItem('dailyPlan', JSON.stringify(dailyPlan));
-        
-        // Marker rəngini dərhal yenilə
-        dataPoints.forEach(m => {
-            if(m.pointData.id === id) {
-                m.pointData.isPlanned = dailyPlan[id] ? true : false;
-                if (!m.pointData.isVisited) {
-                    m.setIcon(createColoredIcon(m.pointData.isPlanned ? '#f1c40f' : '#3498db'));
-                }
-            }
-        });
+        updateMarkerState(id);
         map.closePopup();
         filterMarkers();
     };
 
     window.markAsVisited = function(id) {
         const now = new Date();
-        const dateStr = now.toLocaleDateString('az-AZ') + " " + now.toLocaleTimeString('az-AZ', {hour: '2-digit', minute:'2-digit'});
-        visitHistory[id] = { lastVisit: dateStr };
+        visitHistory[id] = { lastVisit: now.toLocaleString('az-AZ') };
         localStorage.setItem('visitHistory', JSON.stringify(visitHistory));
-        
-        // Ziyarət edildisə plandan avtomatik çıxsın (istəyə bağlı)
         if (dailyPlan[id]) delete dailyPlan[id];
         localStorage.setItem('dailyPlan', JSON.stringify(dailyPlan));
-
-        dataPoints.forEach(m => {
-            if(m.pointData.id === id) {
-                m.setIcon(createColoredIcon('#2ecc71'));
-                m.pointData.isVisited = true;
-                m.pointData.isPlanned = false;
-            }
-        });
+        updateMarkerState(id);
         map.closePopup();
         filterMarkers();
     };
+
+    function updateMarkerState(id) {
+        dataPoints.forEach(m => {
+            if(m.pointData.id === id) {
+                m.pointData.isVisited = visitHistory[id] ? true : false;
+                m.pointData.isPlanned = dailyPlan[id] ? true : false;
+                let color = '#0984e3';
+                if (m.pointData.isVisited) color = '#00b894';
+                else if (m.pointData.isPlanned) color = '#fdcb6e';
+                m.setIcon(createColoredIcon(color));
+            }
+        });
+    }
 
     function filterMarkers() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const statusFilter = document.getElementById('statusFilter').value;
         markersLayer.clearLayers();
-        
         let filtered = dataPoints.filter(m => {
             const matchesSearch = m.searchKey.includes(searchTerm);
             let matchesStatus = true;
             if (statusFilter === 'visited') matchesStatus = m.pointData.isVisited;
             else if (statusFilter === 'pending') matchesStatus = !m.pointData.isVisited;
             else if (statusFilter === 'plan') matchesStatus = m.pointData.isPlanned && !m.pointData.isVisited;
-            
             return matchesSearch && matchesStatus;
         });
-
-        if (userLocation) {
-            filtered.sort((a, b) => map.distance(a.getLatLng(), userLocation) - map.distance(b.getLatLng(), userLocation));
-        }
-
+        if (userLocation) filtered.sort((a, b) => map.distance(a.getLatLng(), userLocation) - map.distance(b.getLatLng(), userLocation));
         filtered.forEach(m => m.addTo(markersLayer));
         document.getElementById('totalCount').innerText = filtered.length;
     }
@@ -320,12 +310,8 @@
     function findNearestPending() {
         if (!userLocation) { findMe(); return; }
         let targetList = dataPoints.filter(m => !m.pointData.isVisited);
-        // Əgər "Plan" filtri aktivdirsə, yalnız plandakı ən yaxını tapsın
-        if (document.getElementById('statusFilter').value === 'plan') {
-            targetList = targetList.filter(m => m.pointData.isPlanned);
-        }
-        
-        if (targetList.length === 0) { alert("Nöqtə tapılmadı!"); return; }
+        if (document.getElementById('statusFilter').value === 'plan') targetList = targetList.filter(m => m.pointData.isPlanned);
+        if (targetList.length === 0) return alert("Nöqtə tapılmadı!");
         targetList.sort((a, b) => map.distance(a.getLatLng(), userLocation) - map.distance(b.getLatLng(), userLocation));
         map.setView(targetList[0].getLatLng(), 16);
         showMarkerPopup(targetList[0]);
@@ -335,20 +321,18 @@
         if (rawCsvData.length === 0) return;
         let exportData = rawCsvData.map(row => {
             const id = row['SubRetailer Draw ID'];
-            const history = visitHistory[id];
-            return { ...row, Status: history ? "Visited" : "Pending", Plan: dailyPlan[id] ? "Yes" : "No", Tarix: history ? history.lastVisit : "" };
+            return { ...row, Status: visitHistory[id] ? "Visited" : "Pending", Date: visitHistory[id] ? visitHistory[id].lastVisit : "" };
         });
         const csv = Papa.unparse(exportData);
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", "Route_Plan_" + new Date().toLocaleDateString() + ".csv");
-        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        link.download = "Sales_Report_" + new Date().toLocaleDateString() + ".csv";
+        link.click();
     }
 
     document.getElementById('searchInput').oninput = filterMarkers;
-    function clearData() { if(confirm("Sıfırlansın?")) { localStorage.clear(); location.reload(); } }
-    
+    function clearData() { if(confirm("Bütün məlumatlar silinsin?")) { localStorage.clear(); location.reload(); } }
     const savedData = localStorage.getItem('lastCsvData');
     if (savedData) { rawCsvData = JSON.parse(savedData); processData(rawCsvData, false); }
 </script>

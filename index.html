@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Route Pro V3 Final</title>
+    <title>Sales Route Pro V3 - Planlama</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -17,6 +17,7 @@
             --header-bg: white;
             --accent-green: #2ecc71;
             --pending-blue: #3498db;
+            --plan-yellow: #f1c40f;
         }
 
         body.dark-mode {
@@ -88,10 +89,11 @@
         .marker-pin { width: 28px; height: 28px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -14px 0 0 -14px; border: 2px solid white; }
         .marker-pin::after { content: ''; width: 12px; height: 12px; margin: 8px 0 0 8px; background: white; position: absolute; border-radius: 50%; }
 
+        /* Popup və Düymələr */
         .waze-link { display: block; background: var(--primary-color); color: #003344 !important; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 10px; }
         .visit-btn { display: block; background: var(--accent-green); color: white !important; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 8px; border: none; width: 100%; cursor: pointer; }
+        .plan-btn { display: block; background: var(--plan-yellow); color: #000 !important; padding: 10px; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 8px; border: none; width: 100%; cursor: pointer; }
         
-        /* Məsafə yazısı üçün stil */
         .distance-label { color: #f39c12; font-weight: bold; font-size: 13px; margin: 5px 0; display: block; }
     </style>
 </head>
@@ -110,8 +112,9 @@
         <input type="text" id="searchInput" placeholder="Mağaza axtar..." disabled>
         <select id="statusFilter" onchange="filterMarkers()" disabled>
             <option value="all">Hamısı</option>
-            <option value="visited">Ziyarət</option>
-            <option value="pending">Gözləyən</option>
+            <option value="plan">📌 Gediləcək (Plan)</option>
+            <option value="visited">✅ Ziyarət Edilənlər</option>
+            <option value="pending">🔘 Gözləyənlər</option>
         </select>
     </div>
 </div>
@@ -132,15 +135,15 @@
 
 <script>
     let userLocation = null;
-    let userMarker = null; // Sizin yerinizi xəritədə göstərmək üçün
+    let userMarker = null;
     let isDarkMode = localStorage.getItem('darkMode') === 'true';
     const markersLayer = L.layerGroup();
     let dataPoints = [];
     let rawCsvData = [];
     let visitHistory = JSON.parse(localStorage.getItem('visitHistory')) || {};
+    let dailyPlan = JSON.parse(localStorage.getItem('dailyPlan')) || {}; // Yeni Plan Yaddaşı
 
     const map = L.map('map', { zoomControl: false }).setView([40.4093, 49.8671], 9);
-    
     const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
     const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
     (isDarkMode ? darkTiles : lightTiles).addTo(map);
@@ -163,49 +166,16 @@
         isDarkMode ? (map.removeLayer(lightTiles), darkTiles.addTo(map)) : (map.removeLayer(darkTiles), lightTiles.addTo(map));
     }
 
-    // GPS: Mənim yerimi tap
     function findMe() {
-        map.locate({setView: true, maxZoom: 16, watch: false});
+        map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
     }
 
     map.on('locationfound', (e) => {
         userLocation = e.latlng;
-        
-        // Mənim yerimi göstərən xüsusi marker
-        if (userMarker) {
-            userMarker.setLatLng(e.latlng);
-        } else {
-            userMarker = L.circleMarker(e.latlng, {
-                radius: 8, color: '#fff', weight: 3, fillOpacity: 1, fillColor: '#3498db'
-            }).addTo(map).bindPopup("Sizin yeriniz");
-        }
-        
-        // Məsafələr dəyişdiyi üçün xəritəni yeniləyirik
+        if (userMarker) { userMarker.setLatLng(e.latlng); } 
+        else { userMarker = L.circleMarker(e.latlng, { radius: 8, color: '#fff', weight: 3, fillOpacity: 1, fillColor: '#3498db' }).addTo(map); }
         filterMarkers(); 
     });
-
-    map.on('locationerror', () => alert("GPS tapılmadı. Zəhmət olmasa icazə verin."));
-
-    // RADAR: Ən yaxın ziyarət edilməmiş nöqtə
-    function findNearestPending() {
-        if (!userLocation) {
-            alert("Radar üçün əvvəlcə 📍 düyməsinə basaraq yerinizi təyin edin.");
-            return;
-        }
-
-        let pending = dataPoints.filter(m => !m.pointData.isVisited);
-        if (pending.length === 0) {
-            alert("Ziyarət edilməmiş nöqtə qalmadı!");
-            return;
-        }
-
-        // Məsafəyə görə sırala
-        pending.sort((a, b) => map.distance(a.getLatLng(), userLocation) - map.distance(b.getLatLng(), userLocation));
-        
-        const nearest = pending[0];
-        map.setView(nearest.getLatLng(), 16);
-        showMarkerPopup(nearest);
-    }
 
     document.getElementById('csvFile').onchange = (e) => {
         const file = e.target.files[0];
@@ -230,8 +200,15 @@
             if (!isNaN(lat) && !isNaN(lng)) {
                 const id = row['SubRetailer Draw ID'] || 'N/A';
                 const isVisited = visitHistory[id] ? true : false;
-                const marker = L.marker([lat, lng], { icon: createColoredIcon(isVisited ? '#2ecc71' : '#3498db') });
-                marker.pointData = { ...row, lat, lng, id, isVisited };
+                const isPlanned = dailyPlan[id] ? true : false;
+                
+                // Rəng məntiqi: Yaşıl (Ziyarət), Sarı (Plan), Göy (Gözləyən)
+                let color = '#3498db';
+                if (isVisited) color = '#2ecc71';
+                else if (isPlanned) color = '#f1c40f';
+
+                const marker = L.marker([lat, lng], { icon: createColoredIcon(color) });
+                marker.pointData = { ...row, lat, lng, id, isVisited, isPlanned };
                 marker.searchKey = ((row['District'] || '') + " " + id).toLowerCase();
                 marker.on('click', () => showMarkerPopup(marker));
                 dataPoints.push(marker);
@@ -250,40 +227,67 @@
     function showMarkerPopup(marker) {
         const p = marker.pointData;
         const history = visitHistory[p.id];
+        const isPlanned = dailyPlan[p.id];
         
-        // MƏSAFƏ HESABLANMASI
         let distHtml = "";
         if (userLocation) {
             const dist = (map.distance(marker.getLatLng(), userLocation) / 1000).toFixed(2);
-            distHtml = `<span class="distance-label">📏 Məsafə: ${dist} km</span>`;
+            distHtml = `<span class="distance-label">📏 ${dist} km uzaqda</span>`;
         }
 
-        const historyHtml = history 
-            ? `<div style="font-size:11px; color:#888; border-top:1px dashed #ccc; margin-top:8px; padding-top:5px;">🕒 Son: ${history.lastVisit}</div>`
-            : `<div style="font-size:11px; color:#888; border-top:1px dashed #ccc; margin-top:8px; padding-top:5px;">🕒 Ziyarət edilməyib</div>`;
-
         const content = `
-            <div style="text-align:center; min-width:160px">
+            <div style="text-align:center; min-width:180px">
                 <b style="font-size:14px">${p['District'] || 'Məntəqə'}</b><br>
                 <small>ID: ${p.id}</small>
                 ${distHtml}
-                <a href="https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes" target="_blank" class="waze-link">🚙 Waze ilə get</a>
+                <a href="https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes" target="_blank" class="waze-link">🚙 Waze</a>
                 <button onclick="markAsVisited('${p.id}')" class="visit-btn">✅ Ziyarəti Təsdiqlə</button>
-                ${historyHtml}
+                <button onclick="togglePlan('${p.id}')" class="plan-btn">
+                    ${isPlanned ? '❌ Plandan Çıxar' : '📍 Plana Əlavə Et'}
+                </button>
+                <div style="font-size:11px; color:#888; margin-top:8px; border-top:1px dashed #ccc; padding-top:5px;">
+                    ${history ? '🕒 Son: ' + history.lastVisit : '🕒 Ziyarət edilməyib'}
+                </div>
             </div>
         `;
         L.popup().setLatLng(marker.getLatLng()).setContent(content).openOn(map);
     }
 
+    // PLANA ƏLAVƏ / SİLMƏ FUNKSİYASI
+    window.togglePlan = function(id) {
+        if (dailyPlan[id]) delete dailyPlan[id];
+        else dailyPlan[id] = true;
+        
+        localStorage.setItem('dailyPlan', JSON.stringify(dailyPlan));
+        
+        // Marker rəngini dərhal yenilə
+        dataPoints.forEach(m => {
+            if(m.pointData.id === id) {
+                m.pointData.isPlanned = dailyPlan[id] ? true : false;
+                if (!m.pointData.isVisited) {
+                    m.setIcon(createColoredIcon(m.pointData.isPlanned ? '#f1c40f' : '#3498db'));
+                }
+            }
+        });
+        map.closePopup();
+        filterMarkers();
+    };
+
     window.markAsVisited = function(id) {
         const now = new Date();
         const dateStr = now.toLocaleDateString('az-AZ') + " " + now.toLocaleTimeString('az-AZ', {hour: '2-digit', minute:'2-digit'});
-        visitHistory[id] = { lastVisit: dateStr, user: "Mən" };
+        visitHistory[id] = { lastVisit: dateStr };
         localStorage.setItem('visitHistory', JSON.stringify(visitHistory));
+        
+        // Ziyarət edildisə plandan avtomatik çıxsın (istəyə bağlı)
+        if (dailyPlan[id]) delete dailyPlan[id];
+        localStorage.setItem('dailyPlan', JSON.stringify(dailyPlan));
+
         dataPoints.forEach(m => {
             if(m.pointData.id === id) {
                 m.setIcon(createColoredIcon('#2ecc71'));
                 m.pointData.isVisited = true;
+                m.pointData.isPlanned = false;
             }
         });
         map.closePopup();
@@ -294,15 +298,17 @@
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const statusFilter = document.getElementById('statusFilter').value;
         markersLayer.clearLayers();
+        
         let filtered = dataPoints.filter(m => {
             const matchesSearch = m.searchKey.includes(searchTerm);
-            const matchesStatus = (statusFilter === 'all') || 
-                                 (statusFilter === 'visited' && m.pointData.isVisited) || 
-                                 (statusFilter === 'pending' && !m.pointData.isVisited);
+            let matchesStatus = true;
+            if (statusFilter === 'visited') matchesStatus = m.pointData.isVisited;
+            else if (statusFilter === 'pending') matchesStatus = !m.pointData.isVisited;
+            else if (statusFilter === 'plan') matchesStatus = m.pointData.isPlanned && !m.pointData.isVisited;
+            
             return matchesSearch && matchesStatus;
         });
 
-        // Həmişə yaxınlığa görə sırala (GPS varsa)
         if (userLocation) {
             filtered.sort((a, b) => map.distance(a.getLatLng(), userLocation) - map.distance(b.getLatLng(), userLocation));
         }
@@ -311,24 +317,38 @@
         document.getElementById('totalCount').innerText = filtered.length;
     }
 
-    document.getElementById('searchInput').oninput = filterMarkers;
-    function clearData() { if(confirm("Tarixçə silinsin?")) { localStorage.clear(); location.reload(); } }
+    function findNearestPending() {
+        if (!userLocation) { findMe(); return; }
+        let targetList = dataPoints.filter(m => !m.pointData.isVisited);
+        // Əgər "Plan" filtri aktivdirsə, yalnız plandakı ən yaxını tapsın
+        if (document.getElementById('statusFilter').value === 'plan') {
+            targetList = targetList.filter(m => m.pointData.isPlanned);
+        }
+        
+        if (targetList.length === 0) { alert("Nöqtə tapılmadı!"); return; }
+        targetList.sort((a, b) => map.distance(a.getLatLng(), userLocation) - map.distance(b.getLatLng(), userLocation));
+        map.setView(targetList[0].getLatLng(), 16);
+        showMarkerPopup(targetList[0]);
+    }
+
     function exportReport() {
         if (rawCsvData.length === 0) return;
         let exportData = rawCsvData.map(row => {
             const id = row['SubRetailer Draw ID'];
             const history = visitHistory[id];
-            return { ...row, Status: history ? "Visited" : "Pending", Tarix: history ? history.lastVisit : "" };
+            return { ...row, Status: history ? "Visited" : "Pending", Plan: dailyPlan[id] ? "Yes" : "No", Tarix: history ? history.lastVisit : "" };
         });
         const csv = Papa.unparse(exportData);
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", "Hesabat_" + new Date().toLocaleDateString() + ".csv");
+        link.setAttribute("download", "Route_Plan_" + new Date().toLocaleDateString() + ".csv");
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
+
+    document.getElementById('searchInput').oninput = filterMarkers;
+    function clearData() { if(confirm("Sıfırlansın?")) { localStorage.clear(); location.reload(); } }
     
-    // Yüklənmiş datanı bərpa et
     const savedData = localStorage.getItem('lastCsvData');
     if (savedData) { rawCsvData = JSON.parse(savedData); processData(rawCsvData, false); }
 </script>

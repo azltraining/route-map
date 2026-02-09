@@ -3,264 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Route Pro</title>
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
     <style>
-        :root {
-            --primary: #00d2ff;
-            --dark: #003344;
-            --bg: #f4f7f6;
-            --card: #ffffff;
-            --border: #e2e8f0;
-        }
+        :root { --p: #003344; --s: #fdcb6e; --v: #00b894; --bg: #f4f7f6; --c: #ffffff; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
 
-        body.dark-mode {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --border: #334155;
-        }
+        #header { background: var(--c); padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1001; }
+        .row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; width: 100%; }
+        .row:last-child { margin-bottom: 0; }
 
-        body { 
-            margin: 0; font-family: 'Segoe UI', sans-serif; height: 100vh; 
-            display: flex; flex-direction: column; background: var(--bg); overflow: hidden;
-        }
-        
-        #header { 
-            background: var(--card); padding: 10px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1001;
-            display: flex; flex-direction: column; gap: 8px;
-        }
+        .stat-badge { background: #eee; padding: 4px 8px; border-radius: 15px; font-size: 11px; font-weight: bold; color: var(--p); white-space: nowrap; }
+        input { flex: 1.5; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; min-width: 0; }
+        select { flex: 1; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; min-width: 0; background-color: #fff; cursor: pointer; }
 
-        .top-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .search-row { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; width: 100%; }
+        .btn-csv { background: var(--p); color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+        .icon-btn { border: 1.5px solid #e0e0e0; background: white; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--p); flex-shrink: 0; }
 
-        #searchInput, #statusFilter {
-            padding: 10px; border: 1.5px solid var(--border); border-radius: 10px;
-            background: var(--bg); color: inherit; font-size: 13px; outline: none;
-            width: 100%; box-sizing: border-box;
-        }
+        /* Yeni Route Düyməsi */
+        .btn-route { background: #6c5ce7; color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; border: none; }
 
-        .btn-upload { 
-            background: var(--dark); color: white; padding: 8px 12px; border-radius: 8px; 
-            font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 5px;
-        }
+        #map { flex: 1; position: relative; }
+        .controls { position: absolute; bottom: 30px; right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
+        .btn-act { width: 55px; height: 55px; border-radius: 18px; background: white; border: none; box-shadow: 0 6px 16px rgba(0,0,0,0.15); font-size: 22px; display: flex; align-items: center; justify-content: center; }
 
-        .icon-btn { 
-            background: var(--card); border: 1.5px solid var(--border); width: 38px; height: 38px;
-            border-radius: 8px; display: flex; align-items: center; justify-content: center;
-        }
+        .copyright-overlay { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.7); padding: 2px 10px; border-radius: 10px; font-size: 10px; color: #555; pointer-events: none; white-space: nowrap; }
 
-        #map { flex: 1; z-index: 1; position: relative; }
+        /* Marker və Nömrələmə */
+        .marker-pin { width: 28px; height: 28px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -14px 0 0 -14px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .route-num { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: var(--p); color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 1px solid white; z-index: 1000; }
 
-        .counter-card {
-            position: absolute; top: 10px; left: 10px; background: var(--card);
-            padding: 5px 12px; border-radius: 20px; z-index: 1000; font-size: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: 1px solid var(--border);
-        }
-
-        .side-controls {
-            position: absolute; bottom: 30px; right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 1000;
-        }
-
-        .action-btn {
-            width: 54px; height: 54px; background: var(--card); border-radius: 15px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: none; font-size: 22px;
-        }
-
-        /* Marker Pin */
-        .marker-pin { width: 28px; height: 28px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -14px 0 0 -14px; border: 2px solid white; }
-        .marker-pin::after { content: ''; width: 12px; height: 12px; margin: 8px 0 0 8px; background: white; position: absolute; border-radius: 50%; }
-
-        /* Popup */
-        .waze-btn { display: block; background: #31CCFF; color: white !important; text-align: center; padding: 10px; border-radius: 8px; text-decoration: none; margin-top: 10px; font-weight: bold; }
-        .visit-btn { width: 100%; background: #00b894; color: white; border: none; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; }
+        .pop-card { text-align: center; min-width: 170px; }
+        .pop-card b { font-size: 15px; color: var(--p); display: block; margin-bottom: 2px; }
+        .pop-info { font-size: 11px; color: #666; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        .dist-info { background: #f0f7ff; color: #007aff; padding: 4px; border-radius: 6px; font-weight: bold; margin-bottom: 6px; font-size: 10px; }
+        .waze-btn { background: #31CCFF; color: white !important; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; border-radius: 8px; font-weight: bold; margin-top: 6px; font-size: 13px; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 8px; }
+        .btn-s { border: none; padding: 7px; border-radius: 6px; font-weight: bold; font-size: 10px; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div class="top-row">
-        <label class="btn-upload">
-            <i class="fa-solid fa-file-csv"></i> CSV
-            <input type="file" id="csvFile" style="display:none" accept=".csv">
-        </label>
-        <div style="display: flex; gap: 6px;">
-            <button class="icon-btn" onclick="exportReport()"><i class="fa-solid fa-download"></i></button>
-            <button class="icon-btn" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
-            <button class="icon-btn" onclick="clearData()"><i class="fa-solid fa-trash"></i></button>
-        </div>
+    <div class="row">
+        <label class="btn-csv"><i class="fa-solid fa-file-upload"></i> CSV <input type="file" id="csvFile" style="display:none" accept=".csv"></label>
+        <button class="btn-route" onclick="showMyRoute()"><i class="fa-solid fa-route"></i> Yolu Göstər</button>
+        <div style="flex:1"></div>
+        <button class="icon-btn" onclick="exportReport()" title="Hesabat Yüklə"><i class="fa-solid fa-file-export"></i></button>
+        <button class="icon-btn" onclick="clearData()"><i class="fa-solid fa-trash-can"></i></button>
     </div>
-    
-    <div class="search-row">
-        <input type="text" id="searchInput" placeholder="Axtarış..." disabled>
-        <select id="statusFilter" onchange="filterMarkers()" disabled>
+    <div class="row">
+        <div class="stat-badge" id="counter">Say: 0</div>
+        <input type="text" id="search" placeholder="Axtar..." disabled>
+        <select id="filter" onchange="filterM()" disabled>
             <option value="all">Hamısı</option>
-            <option value="plan">📍 Plan</option>
-            <option value="visited">✅ Bitdi</option>
-            <option value="pending">⚪ Gözləyən</option>
+            <option value="plan">Gediləcək (plan)</option>
+            <option value="visited">Ziyarət edildi</option>
+            <option value="pending">Gözləyənlər</option>
         </select>
     </div>
 </div>
 
 <div id="map">
-    <div id="counterCard" class="counter-card" style="display:none">
-        <span id="totalCount">0</span> məntəqə
-    </div>
-    <div class="side-controls">
-        <button class="action-btn" style="background: var(--dark); color: white;" onclick="findNearestPending()"><i class="fa-solid fa-tower-broadcast"></i></button>
-        <button class="action-btn" style="color: #e74c3c;" onclick="findMe()"><i class="fa-solid fa-crosshairs"></i></button>
+    <div class="copyright-overlay">© This application is created by AZL Training</div>
+    <div class="controls">
+        <button class="btn-act" style="background:var(--p); color:white" onclick="findN()"><i class="fa-solid fa-tower-broadcast"></i></button>
+        <button class="btn-act" style="color:#e74c3c" onclick="findMe()"><i class="fa-solid fa-location-crosshairs"></i></button>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
 <script>
-    let userLocation = null;
-    let userMarker = null;
-    let isDarkMode = localStorage.getItem('darkMode') === 'true';
-    const markersLayer = L.layerGroup();
-    let dataPoints = [];
-    let rawCsvData = [];
-    let visitHistory = JSON.parse(localStorage.getItem('visitHistory')) || {};
-    let dailyPlan = JSON.parse(localStorage.getItem('dailyPlan')) || {};
+    let uL = null, uM = null, mLayer = L.layerGroup(), dPts = [];
+    let vH = JSON.parse(localStorage.getItem('vH')) || {};
+    let dP = JSON.parse(localStorage.getItem('dP')) || {};
 
-    const map = L.map('map', { zoomControl: false }).setView([40.4093, 49.8671], 9);
-    const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-    const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
-    (isDarkMode ? darkTiles : lightTiles).addTo(map);
-    markersLayer.addTo(map);
+    const map = L.map('map', {zoomControl: false}).setView([40.4, 49.8], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    mLayer.addTo(map);
 
-    if (isDarkMode) document.body.classList.add('dark-mode');
-
-    function createColoredIcon(color) {
-        return L.divIcon({
-            className: 'custom-div-icon',
-            html: `<div style="background-color:${color};" class="marker-pin"></div>`,
-            iconSize: [30, 42], iconAnchor: [15, 42]
-        });
-    }
-
-    function findMe() {
-        map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
-    }
-
+    function findMe() { map.locate({setView: true, maxZoom: 16}); }
     map.on('locationfound', (e) => {
-        userLocation = e.latlng;
-        if (!userMarker) {
-            userMarker = L.circleMarker(e.latlng, { radius: 8, color: '#fff', weight: 3, fillOpacity: 1, fillColor: '#0984e3' }).addTo(map);
-        } else {
-            userMarker.setLatLng(e.latlng);
-        }
-        filterMarkers();
+        uL = e.latlng;
+        if(!uM) uM = L.circleMarker(e.latlng, {radius: 8, color: '#fff', weight: 2, fillColor: '#007aff', fillOpacity: 1}).addTo(map);
+        else uM.setLatLng(e.latlng);
+        // Hər məkanda yenilənmə olanda route nömrələrini yenilə
+        if(document.getElementById('filter').value === 'plan') filterM();
     });
 
     document.getElementById('csvFile').onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        Papa.parse(file, {
-            header: true, skipEmptyLines: true,
-            complete: (results) => {
-                rawCsvData = results.data;
-                processData(rawCsvData, true);
-            }
-        });
+        const f = e.target.files[0]; if(!f) return;
+        Papa.parse(f, {header: true, skipEmptyLines: true, complete: (r) => { process(r.data, true); }});
     };
 
-    function processData(data, shouldSave) {
-        markersLayer.clearLayers();
-        dataPoints = [];
-        if (shouldSave) localStorage.setItem('lastCsvData', JSON.stringify(data));
+    function process(data, s) {
+        mLayer.clearLayers(); dPts.length = 0;
+        if(s) localStorage.setItem('lastC', JSON.stringify(data));
 
-        data.forEach(row => {
-            const lat = parseFloat(row['Latitude']?.toString().replace(',', '.'));
-            const lng = parseFloat(row['Longitude']?.toString().replace(',', '.'));
-            if (!isNaN(lat) && !isNaN(lng)) {
-                const id = row['SubRetailer Draw ID'] || 'N/A';
-                let color = visitHistory[id] ? '#00b894' : (dailyPlan[id] ? '#fdcb6e' : '#0984e3');
-                const marker = L.marker([lat, lng], { icon: createColoredIcon(color) });
-                marker.pointData = { ...row, lat, lng, id };
-                marker.on('click', () => showMarkerPopup(marker));
-                dataPoints.push(marker);
-                marker.addTo(markersLayer);
+        // Əgər "Plan" modundayıqsa nömrələmə üçün sıralama et
+        let sortedData = [...data];
+        if(uL) {
+            sortedData.sort((a,b) => {
+                let distA = map.distance(uL, [parseFloat(a.Latitude?.replace(',','.')), parseFloat(a.Longitude?.replace(',','.'))]);
+                let distB = map.distance(uL, [parseFloat(b.Latitude?.replace(',','.')), parseFloat(b.Longitude?.replace(',','.'))]);
+                return distA - distB;
+            });
+        }
+
+        let planIdx = 1;
+        data.forEach(r => {
+            const lat = parseFloat(r.Latitude?.replace(',','.')), lng = parseFloat(r.Longitude?.replace(',','.'));
+            if(!isNaN(lat) && !isNaN(lng)) {
+                const id = r['SubRetailer Draw ID'];
+                const isP = dP[id], isV = vH[id];
+                const col = isV ? '#00b894' : (isP ? '#fdcb6e' : '#0984e3');
+
+                // Ardıcıllıq nömrəsi (Yalnız planlanan və ziyarət edilməyənlər üçün)
+                let numHtml = "";
+                if(isP && !isV && uL) {
+                    // Plandakıların uL-ə görə sırasını tapırıq
+                    let currentPlan = data.filter(x => dP[x['SubRetailer Draw ID']] && !vH[x['SubRetailer Draw ID']]);
+                    currentPlan.sort((a,b) => {
+                        return map.distance(uL, [parseFloat(a.Latitude?.replace(',','.')), parseFloat(a.Longitude?.replace(',','.'))]) -
+                               map.distance(uL, [parseFloat(b.Latitude?.replace(',','.')), parseFloat(b.Longitude?.replace(',','.'))]);
+                    });
+                    let idx = currentPlan.findIndex(x => x['SubRetailer Draw ID'] === id);
+                    if(idx !== -1) numHtml = `<b class="route-num">${idx + 1}</b>`;
+                }
+
+                const m = L.marker([lat, lng], {
+                    icon: L.divIcon({className:'', html:`<div style="background:${col}" class="marker-pin"></div>${numHtml}`, iconSize:[30,42]})
+                });
+                m.pData = { ...r, id };
+                m.on('click', () => showP(m));
+                dPts.push(m); m.addTo(mLayer);
             }
         });
-        if (dataPoints.length > 0) {
-            map.fitBounds(new L.featureGroup(dataPoints).getBounds(), { padding: [30, 30] });
-            document.getElementById('searchInput').disabled = false;
-            document.getElementById('statusFilter').disabled = false;
-            document.getElementById('totalCount').innerText = dataPoints.length;
-            document.getElementById('counterCard').style.display = 'block';
+
+        document.getElementById('counter').innerText = `Say: ${dPts.length}`;
+        if(dPts.length) {
+            document.getElementById('search').disabled = false;
+            document.getElementById('filter').disabled = false;
+            if(s) map.fitBounds(new L.featureGroup(dPts).getBounds());
         }
     }
 
-    function showMarkerPopup(marker) {
-        const p = marker.pointData;
-        const isPlanned = dailyPlan[p.id];
-        const content = `
-            <div style="text-align:center">
-                <b>${p['District'] || 'Mağaza'}</b><br>
-                <small>ID: ${p.id}</small>
-                <a href="https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes" class="waze-btn">Waze</a>
-                <button onclick="markAsVisited('${p.id}')" class="visit-btn">Bitir</button>
-                <button onclick="togglePlan('${p.id}')" style="width:100%; margin-top:5px; padding:8px; border-radius:8px; border:1px solid #ccc">
-                    ${isPlanned ? 'Plandan Çıxar' : 'Plana Əlavə Et'}
-                </button>
-            </div>
-        `;
-        L.popup().setLatLng(marker.getLatLng()).setContent(content).openOn(map);
+    function showP(m) {
+        const p = m.pData, id = p.id;
+        const isP = dP[id], isV = vH[id];
+        const lastDate = isV ? vH[id] : "Yoxdur";
+        let distText = uL ? `<div class="dist-info">Məsafə: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km</div>` : "";
+
+        const h = `
+            <div class="pop-card">
+                <b>${p.District || 'Adsız'}</b>
+                <div class="pop-info">ID: ${id}<br>Son: ${lastDate}</div>
+                ${distText}
+                <div class="action-grid">
+                    <button onclick="mV('${id}')" class="btn-s" style="background:#00b894">Bitir</button>
+                    <button onclick="tP('${id}')" class="btn-s" style="background:#fdcb6e; color:#333">${isP ? 'Plandan çıx' : 'Plana sal'}</button>
+                </div>
+                <a href="waze://?ll=${p.Latitude},${p.Longitude}&navigate=yes" class="waze-btn">WAZE</a>
+            </div>`;
+        L.popup().setLatLng(m.getLatLng()).setContent(h).openOn(map);
     }
 
-    window.markAsVisited = (id) => {
-        visitHistory[id] = true;
-        localStorage.setItem('visitHistory', JSON.stringify(visitHistory));
-        location.reload();
+    window.mV = (id) => {
+        vH[id] = new Date().toLocaleString('az-AZ');
+        localStorage.setItem('vH', JSON.stringify(vH));
+        refreshMap();
     };
 
-    window.togglePlan = (id) => {
-        if (dailyPlan[id]) delete dailyPlan[id]; else dailyPlan[id] = true;
-        localStorage.setItem('dailyPlan', JSON.stringify(dailyPlan));
-        location.reload();
+    window.tP = (id) => {
+        if(dP[id]) delete dP[id]; else dP[id] = true;
+        localStorage.setItem('dP', JSON.stringify(dP));
+        refreshMap();
     };
 
-    function filterMarkers() {
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        const filter = document.getElementById('statusFilter').value;
-        markersLayer.clearLayers();
-        dataPoints.filter(m => {
-            const id = m.pointData.id;
-            const matchSearch = id.toLowerCase().includes(search) || (m.pointData['District'] || '').toLowerCase().includes(search);
-            let matchStatus = true;
-            if (filter === 'visited') matchStatus = visitHistory[id];
-            else if (filter === 'plan') matchStatus = dailyPlan[id];
-            else if (filter === 'pending') matchStatus = !visitHistory[id];
-            if (matchSearch && matchStatus) m.addTo(markersLayer);
+    function refreshMap() {
+        const curZoom = map.getZoom(), curCenter = map.getCenter();
+        process(JSON.parse(localStorage.getItem('lastC')), false);
+        map.setView(curCenter, curZoom);
+        map.closePopup();
+    }
+
+    function filterM() {
+        const s = document.getElementById('search').value.toLowerCase();
+        const f = document.getElementById('filter').value;
+        mLayer.clearLayers();
+        let count = 0;
+        dPts.forEach(m => {
+            const id = m.pData.id, name = (m.pData.District || "").toLowerCase();
+            const matchS = id.includes(s) || name.includes(s);
+            let matchF = (f === 'all') || (f === 'plan' && dP[id]) || (f === 'visited' && vH[id]) || (f === 'pending' && !vH[id]);
+            if(matchS && matchF) { m.addTo(mLayer); count++; }
         });
+        document.getElementById('counter').innerText = `Say: ${count}`;
     }
 
-    function findNearestPending() {
-        if (!userLocation) return findMe();
-        let pending = dataPoints.filter(m => !visitHistory[m.pointData.id]);
-        if (pending.length === 0) return;
-        pending.sort((a,b) => map.distance(a.getLatLng(), userLocation) - map.distance(b.getLatLng(), userLocation));
-        map.setView(pending[0].getLatLng(), 16);
-        showMarkerPopup(pending[0]);
+    // YOLU GÖSTƏR FUNKSİYASI
+    window.showMyRoute = () => {
+        if(!uL) return alert("Öncə məkanınızı təyin edin (Radar düyməsi)!");
+        let plan = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]);
+        if(plan.length === 0) return alert("Planda aktiv nöqtə yoxdur!");
+
+        document.getElementById('filter').value = 'plan';
+        filterM();
+
+        // Ən yaxın nöqtəyə fokuslan
+        plan.sort((a,b) => map.distance(a.getLatLng(), uL) - map.distance(b.getLatLng(), uL));
+        map.setView(plan[0].getLatLng(), 15);
+        showP(plan[0]);
+    };
+
+    window.exportReport = () => {
+        if(Object.keys(vH).length === 0) return alert("Ziyarət yoxdur!");
+        let csv = "data:text/csv;charset=utf-8,ID,Mağaza,Ziyarət Vaxtı\n";
+        const data = JSON.parse(localStorage.getItem('lastC') || "[]");
+        Object.keys(vH).forEach(id => {
+            const shop = data.find(item => item['SubRetailer Draw ID'] === id);
+            csv += `${id},${shop ? shop.District : "Naməlum"},${vH[id]}\n`;
+        });
+        const link = document.createElement("a");
+        link.setAttribute("href", encodeURI(csv));
+        link.setAttribute("download", `Hesabat_${new Date().toLocaleDateString()}.csv`);
+        link.click();
+    };
+
+    function findN() {
+        if(!uL) return findMe();
+        let p = dPts.filter(m => !vH[m.pData.id]);
+        if(!p.length) return;
+        p.sort((a,b) => map.distance(a.getLatLng(), uL) - map.distance(b.getLatLng(), uL));
+        map.setView(p[0].getLatLng(), 16);
+        showP(p[0]);
     }
 
-    function toggleDarkMode() {
-        isDarkMode = !isDarkMode;
-        localStorage.setItem('darkMode', isDarkMode);
-        location.reload();
-    }
-
-    function clearData() { if(confirm("Məlumatlar silinsin?")) { localStorage.clear(); location.reload(); } }
-    document.getElementById('searchInput').oninput = filterMarkers;
-    const saved = localStorage.getItem('lastCsvData');
-    if (saved) processData(JSON.parse(saved), false);
+    function clearData() { if(confirm("Silinsin?")) { localStorage.clear(); location.reload(); } }
+    document.getElementById('search').oninput = filterM;
+    const saved = localStorage.getItem('lastC'); if(saved) process(JSON.parse(saved), false);
 </script>
 </body>
 </html>

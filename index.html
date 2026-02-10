@@ -8,33 +8,15 @@
     <style>
         :root { --p: #003344; --s: #fdcb6e; --v: #00b894; --bg: #f4f7f6; --c: #ffffff; }
         
-        /* Mobil brauzerlərdə aşağı hissənin itməməsi üçün düzəliş */
         html, body { 
-            margin: 0; 
-            padding: 0; 
-            width: 100%; 
-            height: 100%; 
-            height: -webkit-fill-available; /* Safari üçün */
-            overflow: hidden; 
-            font-family: 'Segoe UI', sans-serif;
-            background: var(--bg);
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            height: -webkit-fill-available; overflow: hidden; 
+            font-family: 'Segoe UI', sans-serif; background: var(--bg);
         }
 
-        body { 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh; 
-            min-height: -webkit-fill-available;
-        }
+        body { display: flex; flex-direction: column; min-height: 100vh; min-height: -webkit-fill-available; }
         
-        #header { 
-            background: var(--c); 
-            padding: 10px 10px 12px 10px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-            z-index: 1001; 
-            flex-shrink: 0; /* Header-in sıxılmaması üçün */
-        }
-
+        #header { background: var(--c); padding: 10px 10px 12px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1001; flex-shrink: 0; }
         .row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; width: 100%; }
         .row:last-child { margin-bottom: 0; }
         
@@ -45,34 +27,15 @@
         .btn-csv { background: var(--p); color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
         .icon-btn { border: 1.5px solid #e0e0e0; background: white; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--p); flex-shrink: 0; }
         .btn-route { background: #6c5ce7; color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; border: none; }
+        
+        /* Yeni Təmizləmə Düyməsi */
+        .btn-clear-plan { background: #e67e22; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 16px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
 
-        #map { 
-            flex-grow: 1; 
-            width: 100%; 
-            position: relative; 
-            z-index: 1;
-        }
-
-        /* Düymələrin bir az daha yuxarıda görünməsi üçün (Safe Area) */
+        #map { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
         .controls { position: absolute; bottom: 45px; right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
         .btn-act { width: 55px; height: 55px; border-radius: 18px; background: white; border: none; box-shadow: 0 6px 16px rgba(0,0,0,0.15); font-size: 22px; display: flex; align-items: center; justify-content: center; outline: none; }
 
-        .copyright-overlay { 
-            position: absolute; 
-            bottom: 10px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            z-index: 1000; 
-            background: rgba(255, 255, 255, 0.85); 
-            padding: 4px 12px; 
-            border-radius: 20px; 
-            font-size: 10px; 
-            color: #333; 
-            font-weight: 500;
-            pointer-events: none; 
-            white-space: nowrap;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+        .copyright-overlay { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.85); padding: 4px 12px; border-radius: 20px; font-size: 10px; color: #333; font-weight: 500; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
         .marker-pin { width: 28px; height: 28px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -14px 0 0 -14px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .route-num { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: var(--p); color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 1px solid white; z-index: 1000; }
@@ -93,8 +56,9 @@
         <label class="btn-csv"><i class="fa-solid fa-file-upload"></i> CSV <input type="file" id="csvFile" style="display:none" accept=".csv"></label>
         <button class="btn-route" onclick="showMyRoute()"><i class="fa-solid fa-route"></i> Yolu Göstər</button>
         <div style="flex:1"></div>
+        <button class="btn-clear-plan" onclick="clearCurrentPlan()" title="Planı Təmizlə"><i class="fa-solid fa-calendar-xmark"></i></button>
         <button class="icon-btn" onclick="exportReport()" title="Hesabat Yüklə"><i class="fa-solid fa-file-export"></i></button>
-        <button class="icon-btn" onclick="clearData()" title="Sıfırla"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="icon-btn" onclick="clearData()" title="Hər şeyi Sıfırla"><i class="fa-solid fa-trash-can"></i></button>
     </div>
     <div class="row">
         <div class="stat-badge" id="counter">Say: 0</div>
@@ -123,7 +87,6 @@
     let vH = JSON.parse(localStorage.getItem('vH')) || {}; 
     let dP = JSON.parse(localStorage.getItem('dP')) || {}; 
     
-    // Mobil brauzer hündürlüyünü tənzimləyən funksiya
     function fixVH() {
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -135,9 +98,7 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     mLayer.addTo(map);
 
-    function findMe() { 
-        map.locate({setView: true, maxZoom: 16}); 
-    }
+    function findMe() { map.locate({setView: true, maxZoom: 16}); }
     
     map.on('locationfound', (e) => {
         uL = e.latlng;
@@ -222,6 +183,17 @@
         refreshMap();
     };
 
+    // YALNIZ PLANI TƏMİZLƏYƏN FUNKSİYA
+    window.clearCurrentPlan = () => {
+        const count = Object.keys(dP).length;
+        if(count === 0) return alert("Planda təmizlənəcək nöqtə yoxdur.");
+        if(confirm(`Plandakı ${count} nöqtə silinsin? (Ziyarət edilənlərə toxunulmayacaq)`)) {
+            dP = {}; // Plan siyahısını boşalt
+            localStorage.setItem('dP', JSON.stringify(dP));
+            refreshMap();
+        }
+    };
+
     function refreshMap() {
         const curZoom = map.getZoom(), curCenter = map.getCenter();
         process(JSON.parse(localStorage.getItem('lastC')), false);
@@ -277,7 +249,7 @@
         showP(p[0]);
     }
 
-    function clearData() { if(confirm("Silinsin?")) { localStorage.clear(); location.reload(); } }
+    function clearData() { if(confirm("Bütün məlumatlar (CSV və Tarixçə) silinsin?")) { localStorage.clear(); location.reload(); } }
     document.getElementById('search').oninput = filterM;
     const saved = localStorage.getItem('lastC'); if(saved) process(JSON.parse(saved), false);
 </script>

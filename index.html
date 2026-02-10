@@ -2,44 +2,88 @@
 <html lang="az">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
         :root { --p: #003344; --s: #fdcb6e; --v: #00b894; --bg: #f4f7f6; --c: #ffffff; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
+        
+        /* Mobil brauzerlərdə aşağı hissənin itməməsi üçün düzəliş */
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            height: -webkit-fill-available; /* Safari üçün */
+            overflow: hidden; 
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+        }
 
-        #header { background: var(--c); padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1001; }
-        .row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; width: 100%; }
+        body { 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+            min-height: -webkit-fill-available;
+        }
+        
+        #header { 
+            background: var(--c); 
+            padding: 10px 10px 12px 10px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            z-index: 1001; 
+            flex-shrink: 0; /* Header-in sıxılmaması üçün */
+        }
+
+        .row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; width: 100%; }
         .row:last-child { margin-bottom: 0; }
-
+        
         .stat-badge { background: #eee; padding: 4px 8px; border-radius: 15px; font-size: 11px; font-weight: bold; color: var(--p); white-space: nowrap; }
-        input { flex: 1.5; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; min-width: 0; }
-        select { flex: 1; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; min-width: 0; background-color: #fff; cursor: pointer; }
-
+        input { flex: 1.5; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; min-width: 0; -webkit-appearance: none; }
+        select { flex: 1; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; background-color: #fff; cursor: pointer; -webkit-appearance: none; }
+        
         .btn-csv { background: var(--p); color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
         .icon-btn { border: 1.5px solid #e0e0e0; background: white; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--p); flex-shrink: 0; }
-
-        /* Yeni Route Düyməsi */
         .btn-route { background: #6c5ce7; color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; border: none; }
 
-        #map { flex: 1; position: relative; }
-        .controls { position: absolute; bottom: 30px; right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
-        .btn-act { width: 55px; height: 55px; border-radius: 18px; background: white; border: none; box-shadow: 0 6px 16px rgba(0,0,0,0.15); font-size: 22px; display: flex; align-items: center; justify-content: center; }
+        #map { 
+            flex-grow: 1; 
+            width: 100%; 
+            position: relative; 
+            z-index: 1;
+        }
 
-        .copyright-overlay { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.7); padding: 2px 10px; border-radius: 10px; font-size: 10px; color: #555; pointer-events: none; white-space: nowrap; }
+        /* Düymələrin bir az daha yuxarıda görünməsi üçün (Safe Area) */
+        .controls { position: absolute; bottom: 45px; right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
+        .btn-act { width: 55px; height: 55px; border-radius: 18px; background: white; border: none; box-shadow: 0 6px 16px rgba(0,0,0,0.15); font-size: 22px; display: flex; align-items: center; justify-content: center; outline: none; }
 
-        /* Marker və Nömrələmə */
+        .copyright-overlay { 
+            position: absolute; 
+            bottom: 10px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            z-index: 1000; 
+            background: rgba(255, 255, 255, 0.85); 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-size: 10px; 
+            color: #333; 
+            font-weight: 500;
+            pointer-events: none; 
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
         .marker-pin { width: 28px; height: 28px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -14px 0 0 -14px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .route-num { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: var(--p); color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 1px solid white; z-index: 1000; }
-
+        
         .pop-card { text-align: center; min-width: 170px; }
         .pop-card b { font-size: 15px; color: var(--p); display: block; margin-bottom: 2px; }
         .pop-info { font-size: 11px; color: #666; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
         .dist-info { background: #f0f7ff; color: #007aff; padding: 4px; border-radius: 6px; font-weight: bold; margin-bottom: 6px; font-size: 10px; }
-        .waze-btn { background: #31CCFF; color: white !important; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; border-radius: 8px; font-weight: bold; margin-top: 6px; font-size: 13px; }
+        .waze-btn { background: #31CCFF; color: white !important; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-radius: 8px; font-weight: bold; margin-top: 6px; font-size: 13px; }
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 8px; }
-        .btn-s { border: none; padding: 7px; border-radius: 6px; font-weight: bold; font-size: 10px; color: white; cursor: pointer; }
+        .btn-s { border: none; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 10px; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -50,7 +94,7 @@
         <button class="btn-route" onclick="showMyRoute()"><i class="fa-solid fa-route"></i> Yolu Göstər</button>
         <div style="flex:1"></div>
         <button class="icon-btn" onclick="exportReport()" title="Hesabat Yüklə"><i class="fa-solid fa-file-export"></i></button>
-        <button class="icon-btn" onclick="clearData()"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="icon-btn" onclick="clearData()" title="Sıfırla"><i class="fa-solid fa-trash-can"></i></button>
     </div>
     <div class="row">
         <div class="stat-badge" id="counter">Say: 0</div>
@@ -76,19 +120,29 @@
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
     let uL = null, uM = null, mLayer = L.layerGroup(), dPts = [];
-    let vH = JSON.parse(localStorage.getItem('vH')) || {};
-    let dP = JSON.parse(localStorage.getItem('dP')) || {};
+    let vH = JSON.parse(localStorage.getItem('vH')) || {}; 
+    let dP = JSON.parse(localStorage.getItem('dP')) || {}; 
+    
+    // Mobil brauzer hündürlüyünü tənzimləyən funksiya
+    function fixVH() {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    window.addEventListener('resize', fixVH);
+    fixVH();
 
-    const map = L.map('map', {zoomControl: false}).setView([40.4, 49.8], 11);
+    const map = L.map('map', {zoomControl: false, attributionControl: false}).setView([40.4, 49.8], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     mLayer.addTo(map);
 
-    function findMe() { map.locate({setView: true, maxZoom: 16}); }
+    function findMe() { 
+        map.locate({setView: true, maxZoom: 16}); 
+    }
+    
     map.on('locationfound', (e) => {
         uL = e.latlng;
         if(!uM) uM = L.circleMarker(e.latlng, {radius: 8, color: '#fff', weight: 2, fillColor: '#007aff', fillOpacity: 1}).addTo(map);
         else uM.setLatLng(e.latlng);
-        // Hər məkanda yenilənmə olanda route nömrələrini yenilə
         if(document.getElementById('filter').value === 'plan') filterM();
     });
 
@@ -100,32 +154,19 @@
     function process(data, s) {
         mLayer.clearLayers(); dPts.length = 0;
         if(s) localStorage.setItem('lastC', JSON.stringify(data));
-
-        // Əgər "Plan" modundayıqsa nömrələmə üçün sıralama et
-        let sortedData = [...data];
-        if(uL) {
-            sortedData.sort((a,b) => {
-                let distA = map.distance(uL, [parseFloat(a.Latitude?.replace(',','.')), parseFloat(a.Longitude?.replace(',','.'))]);
-                let distB = map.distance(uL, [parseFloat(b.Latitude?.replace(',','.')), parseFloat(b.Longitude?.replace(',','.'))]);
-                return distA - distB;
-            });
-        }
-
-        let planIdx = 1;
+        
         data.forEach(r => {
             const lat = parseFloat(r.Latitude?.replace(',','.')), lng = parseFloat(r.Longitude?.replace(',','.'));
             if(!isNaN(lat) && !isNaN(lng)) {
                 const id = r['SubRetailer Draw ID'];
                 const isP = dP[id], isV = vH[id];
                 const col = isV ? '#00b894' : (isP ? '#fdcb6e' : '#0984e3');
-
-                // Ardıcıllıq nömrəsi (Yalnız planlanan və ziyarət edilməyənlər üçün)
+                
                 let numHtml = "";
                 if(isP && !isV && uL) {
-                    // Plandakıların uL-ə görə sırasını tapırıq
                     let currentPlan = data.filter(x => dP[x['SubRetailer Draw ID']] && !vH[x['SubRetailer Draw ID']]);
                     currentPlan.sort((a,b) => {
-                        return map.distance(uL, [parseFloat(a.Latitude?.replace(',','.')), parseFloat(a.Longitude?.replace(',','.'))]) -
+                        return map.distance(uL, [parseFloat(a.Latitude?.replace(',','.')), parseFloat(a.Longitude?.replace(',','.'))]) - 
                                map.distance(uL, [parseFloat(b.Latitude?.replace(',','.')), parseFloat(b.Longitude?.replace(',','.'))]);
                     });
                     let idx = currentPlan.findIndex(x => x['SubRetailer Draw ID'] === id);
@@ -140,10 +181,10 @@
                 dPts.push(m); m.addTo(mLayer);
             }
         });
-
+        
         document.getElementById('counter').innerText = `Say: ${dPts.length}`;
         if(dPts.length) {
-            document.getElementById('search').disabled = false;
+            document.getElementById('search').disabled = false; 
             document.getElementById('filter').disabled = false;
             if(s) map.fitBounds(new L.featureGroup(dPts).getBounds());
         }
@@ -162,9 +203,9 @@
                 ${distText}
                 <div class="action-grid">
                     <button onclick="mV('${id}')" class="btn-s" style="background:#00b894">Bitir</button>
-                    <button onclick="tP('${id}')" class="btn-s" style="background:#fdcb6e; color:#333">${isP ? 'Plandan çıx' : 'Plana sal'}</button>
+                    <button onclick="tP('${id}')" class="btn-s" style="background:#fdcb6e; color:#333">${isP ? 'Çıx' : 'Plana sal'}</button>
                 </div>
-                <a href="waze://?ll=${p.Latitude},${p.Longitude}&navigate=yes" class="waze-btn">WAZE</a>
+                <a href="waze://?ll=${p.Latitude},${p.Longitude}&navigate=yes" class="waze-btn"><i class="fa-brands fa-waze"></i> WAZE</a>
             </div>`;
         L.popup().setLatLng(m.getLatLng()).setContent(h).openOn(map);
     }
@@ -194,24 +235,20 @@
         mLayer.clearLayers();
         let count = 0;
         dPts.forEach(m => {
-            const id = m.pData.id, name = (m.pData.District || "").toLowerCase();
+            const id = m.pData.id.toLowerCase(), name = (m.pData.District || "").toLowerCase();
             const matchS = id.includes(s) || name.includes(s);
-            let matchF = (f === 'all') || (f === 'plan' && dP[id]) || (f === 'visited' && vH[id]) || (f === 'pending' && !vH[id]);
+            let matchF = (f === 'all') || (f === 'plan' && dP[m.pData.id]) || (f === 'visited' && vH[m.pData.id]) || (f === 'pending' && !vH[m.pData.id]);
             if(matchS && matchF) { m.addTo(mLayer); count++; }
         });
         document.getElementById('counter').innerText = `Say: ${count}`;
     }
 
-    // YOLU GÖSTƏR FUNKSİYASI
     window.showMyRoute = () => {
-        if(!uL) return alert("Öncə məkanınızı təyin edin (Radar düyməsi)!");
+        if(!uL) { findMe(); alert("Məkan təyin edilir, yenidən basın."); return; }
         let plan = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]);
-        if(plan.length === 0) return alert("Planda aktiv nöqtə yoxdur!");
-
+        if(plan.length === 0) return alert("Planda nöqtə yoxdur!");
         document.getElementById('filter').value = 'plan';
         filterM();
-
-        // Ən yaxın nöqtəyə fokuslan
         plan.sort((a,b) => map.distance(a.getLatLng(), uL) - map.distance(b.getLatLng(), uL));
         map.setView(plan[0].getLatLng(), 15);
         showP(plan[0]);

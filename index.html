@@ -22,7 +22,6 @@
         #map { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
         .copyright-overlay { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.85); padding: 4px 12px; border-radius: 20px; font-size: 10px; color: #333; font-weight: 500; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        /* Marker Pin və Daxili Nömrə */
         .marker-pin { 
             width: 32px; height: 32px; border-radius: 50% 50% 50% 0; 
             position: absolute; transform: rotate(-45deg); 
@@ -32,7 +31,7 @@
         }
         .marker-pin span { 
             transform: rotate(45deg); color: white; 
-            font-weight: bold; font-size: 12px; font-family: sans-serif;
+            font-weight: bold; font-size: 13px; font-family: sans-serif;
             pointer-events: none;
         }
 
@@ -103,15 +102,15 @@
         eL = L.latLng(parseFloat(eC[0]), parseFloat(eC[1]));
     }
 
+    const map = L.map('map', {zoomControl: false, attributionControl: false}).setView([40.4, 49.8], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    mLayer.addTo(map);
+
     function updateRouteCalculations() {
         isRouteCalculated = false;
         setPoints();
         refreshMap();
     }
-
-    const map = L.map('map', {zoomControl: false, attributionControl: false}).setView([40.4, 49.8], 11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    mLayer.addTo(map);
 
     document.getElementById('csvFile').onchange = (e) => {
         const f = e.target.files[0]; if(!f) return;
@@ -141,6 +140,7 @@
         mLayer.clearLayers(); dPts.length = 0;
         if(s) localStorage.setItem('lastC', JSON.stringify(data));
         setPoints();
+        
         const planList = data.filter(x => dP[x['SubRetailer Draw ID']] && !vH[x['SubRetailer Draw ID']]);
         const optimizedPlan = getOptimizedRoute(planList);
 
@@ -180,8 +180,8 @@
         const isP = dP[id], isV = vH[id];
         const lastDate = isV ? vH[id] : "Yoxdur";
         
-        // Məsafə bölməsi yalnız marşrut hesablandıqda görünür
         let distHtml = "";
+        // Məsafə yalnız nömrələnmiş nöqtələrdə (isRouteCalculated zamanı) çıxır
         if(isRouteCalculated && isP && !isV) {
             distHtml = `<div class="dist-info">Startdan: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km<br>Dayanacağa: ${(map.distance(m.getLatLng(), eL) / 1000).toFixed(2)} km</div>`;
         }
@@ -193,29 +193,41 @@
     window.mV = (id) => { vH[id] = new Date().toLocaleString('az-AZ'); localStorage.setItem('vH', JSON.stringify(vH)); refreshMap(); };
     window.tP = (id) => { 
         if(dP[id]) delete dP[id]; else dP[id] = true; 
-        isRouteCalculated = false; 
+        isRouteCalculated = false; // Plan dəyişəndə nömrələri söndür
         localStorage.setItem('dP', JSON.stringify(dP)); 
         refreshMap(); 
     };
 
     window.showMyRoute = () => {
-        let planList = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]);
-        if(planList.length === 0) return alert("Planda nöqtə yoxdur!");
+        const lastData = localStorage.getItem('lastC');
+        if(!lastData) return alert("Əvvəlcə CSV yükləyin!");
         
-        isRouteCalculated = true;
+        let planCount = Object.keys(dP).length;
+        if(planCount === 0) return alert("Planda nöqtə yoxdur!");
+        
+        isRouteCalculated = true; // Nömrələməni aktiv et
+        
+        // Markerləri yenidən çək ki nömrələr dərhal görünsün
+        process(JSON.parse(lastData), false);
+
+        // Filteri plan rejiminə keçir
         document.getElementById('filter').value = 'plan';
         filterM();
 
-        const sorted = getOptimizedRoute(planList.map(m => m.pData));
-        const firstM = dPts.find(m => m.pData.id === sorted[0]['SubRetailer Draw ID']);
-        if(firstM) {
-            map.setView(firstM.getLatLng(), 15);
-            showP(firstM);
+        // Birinci nöqtəyə fokuslan
+        const planList = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]);
+        const optimized = getOptimizedRoute(planList.map(m => m.pData));
+        if(optimized.length > 0) {
+            const firstM = dPts.find(m => m.pData.id === optimized[0]['SubRetailer Draw ID']);
+            if(firstM) {
+                map.setView(firstM.getLatLng(), 15);
+                showP(firstM);
+            }
         }
     };
 
     window.clearCurrentPlan = () => { if(confirm("Plan silinsin?")) { dP = {}; isRouteCalculated = false; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); } };
-    function refreshMap() { const curZoom = map.getZoom(), curCenter = map.getCenter(), lastData = localStorage.getItem('lastC'); if(lastData) process(JSON.parse(lastData), false); map.setView(curCenter, curZoom); map.closePopup(); }
+    function refreshMap() { const curZoom = map.getZoom(), curCenter = map.getCenter(), lastData = localStorage.getItem('lastC'); if(lastData) process(JSON.parse(lastData), false); map.setView(curCenter, curZoom); }
     function filterM() { const s = document.getElementById('search').value.toLowerCase(), f = document.getElementById('filter').value; mLayer.clearLayers(); let count = 0; dPts.forEach(m => { const id = m.pData.id.toLowerCase(), name = (m.pData.District || "").toLowerCase(); const matchS = id.includes(s) || name.includes(s); let matchF = (f === 'all') || (f === 'plan' && dP[m.pData.id]) || (f === 'visited' && vH[m.pData.id]) || (f === 'pending' && !vH[m.pData.id]); if(matchS && matchF) { m.addTo(mLayer); count++; } }); document.getElementById('counter').innerText = `Say: ${count}`; }
     window.exportReport = () => { let csv = "data:text/csv;charset=utf-8,ID,Mağaza,Ziyarət Vaxtı\n"; const data = JSON.parse(localStorage.getItem('lastC') || "[]"); Object.keys(vH).forEach(id => { const shop = data.find(item => item['SubRetailer Draw ID'] === id); csv += `${id},${shop ? shop.District : "Naməlum"},${vH[id]}\n`; }); const link = document.createElement("a"); link.setAttribute("href", encodeURI(csv)); link.setAttribute("download", `Hesabat.csv`); link.click(); };
     function clearData() { if(confirm("Sıfırlansın?")) { localStorage.clear(); location.reload(); } }

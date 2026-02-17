@@ -38,16 +38,18 @@
     <div class="row">
         <label class="btn-csv"><i class="fa-solid fa-file-upload"></i> CSV <input type="file" id="csvFile" style="display:none" accept=".csv"></label>
         
-        <select id="startPoint" onchange="updateRouteCalculations()" title="Başlanğıc" style="max-width: 130px; border-color: #6c5ce7;">
-            <option value="40.37640719466837,49.86272695730056">Ofis (S)</option>
-            <option value="40.3791468082409,49.86134006965304" selected>Parking (S)</option>
-            <option value="40.39627503668952,49.81617022857304">Fortuna (S)</option>
+        <select id="startPoint" onchange="updateRouteCalculations()" style="max-width: 130px; border-color: #6c5ce7;">
+            <option value="" disabled selected hidden>Başlanğıc</option>
+            <option value="40.37640719466837,49.86272695730056">Ofis</option>
+            <option value="40.3791468082409,49.86134006965304">Parking</option>
+            <option value="40.39627503668952,49.81617022857304">Fortuna</option>
         </select>
 
-        <select id="endPoint" onchange="updateRouteCalculations()" title="Dayanacaq (Ev)" style="max-width: 130px; border-color: #00b894;">
-            <option value="40.412483117894894,49.9862986638301">Elman (E)</option>
-            <option value="40.41266389544212,49.81891908864549">Murad (E)</option>
-            <option value="40.45234747161522,49.77945708048582">Səxavət (E)</option>
+        <select id="endPoint" onchange="updateRouteCalculations()" style="max-width: 130px; border-color: #00b894;">
+            <option value="" disabled selected hidden>Dayanacaq</option>
+            <option value="40.412483117894894,49.9862986638301">Elman</option>
+            <option value="40.41266389544212,49.81891908864549">Murad</option>
+            <option value="40.45234747161522,49.77945708048582">Səxavət</option>
         </select>
 
         <button class="btn-route" onclick="showMyRoute()"><i class="fa-solid fa-route"></i> Yolu Göstər</button>
@@ -80,8 +82,16 @@
     let dP = JSON.parse(localStorage.getItem('dP')) || {}; 
 
     function setPoints() {
-        const sC = document.getElementById('startPoint').value.split(',');
-        const eC = document.getElementById('endPoint').value.split(',');
+        const sVal = document.getElementById('startPoint').value;
+        const eVal = document.getElementById('endPoint').value;
+        
+        // Default koordinatlar (əgər hələ heç nə seçilməyibsə, Parking və Elmanı əsas götürürük)
+        const defS = "40.3791468082409,49.86134006965304";
+        const defE = "40.412483117894894,49.9862986638301";
+
+        const sC = (sVal || defS).split(',');
+        const eC = (eVal || defE).split(',');
+        
         uL = L.latLng(parseFloat(sC[0]), parseFloat(sC[1]));
         eL = L.latLng(parseFloat(eC[0]), parseFloat(eC[1]));
     }
@@ -100,31 +110,22 @@
         Papa.parse(f, {header: true, skipEmptyLines: true, complete: (r) => { process(r.data, true); }});
     };
 
-    // TƏKMİLLƏŞDİRİLMİŞ ALQORİTM: Start -> Mağazalar -> Evə ən yaxın mağaza (FİNAL)
     function getOptimizedRoute(planData) {
         if (planData.length === 0) return [];
-        
         let remaining = [...planData].map(item => ({
             ...item,
             pos: L.latLng(parseFloat(item.Latitude?.replace(',','.')), parseFloat(item.Longitude?.replace(',','.')))
         }));
-
-        // 1. Evə (Dayanacağa) ən yaxın mağazanı tap və onu sonda saxlamaq üçün ayır
         remaining.sort((a, b) => map.distance(a.pos, eL) - map.distance(b.pos, eL));
-        let finalNode = remaining.shift(); // Evə ən yaxın olanı siyahıdan çıxarırıq
-
-        // 2. Qalan mağazaları Startdan başlayaraq zəncirvari sırala
+        let finalNode = remaining.shift();
         let sorted = [];
         let currentPos = uL;
-
         while (remaining.length > 0) {
             remaining.sort((a, b) => map.distance(currentPos, a.pos) - map.distance(currentPos, b.pos));
             let next = remaining.shift();
             sorted.push(next);
             currentPos = next.pos;
         }
-
-        // 3. Ən sonda evə yaxın olan mağazanı əlavə et
         sorted.push(finalNode);
         return sorted;
     }
@@ -133,42 +134,33 @@
         mLayer.clearLayers(); dPts.length = 0;
         if(s) localStorage.setItem('lastC', JSON.stringify(data));
         setPoints();
-
         const planList = data.filter(x => dP[x['SubRetailer Draw ID']] && !vH[x['SubRetailer Draw ID']]);
         const optimizedPlan = getOptimizedRoute(planList);
-
         data.forEach(r => {
             const lat = parseFloat(r.Latitude?.replace(',','.')), lng = parseFloat(r.Longitude?.replace(',','.'));
             if(!isNaN(lat) && !isNaN(lng)) {
                 const id = r['SubRetailer Draw ID'];
                 const isP = dP[id], isV = vH[id];
                 const col = isV ? '#00b894' : (isP ? '#fdcb6e' : '#0984e3');
-                
                 let numHtml = "";
                 if(isP && !isV) {
                     let idx = optimizedPlan.findIndex(x => x['SubRetailer Draw ID'] === id);
                     if(idx !== -1) numHtml = `<b class="route-num">${idx + 1}</b>`;
                 }
-
                 const mIcon = L.divIcon({
                     className: '', 
                     html: `<div style="background:${col}" class="marker-pin"></div>${numHtml}`, 
-                    iconSize: [30, 42],
-                    iconAnchor: [15, 42],
-                    popupAnchor: [0, -40]
+                    iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -40]
                 });
-
                 const m = L.marker([lat, lng], { icon: mIcon });
                 m.pData = { ...r, id };
                 m.on('click', () => showP(m));
                 dPts.push(m); m.addTo(mLayer);
             }
         });
-        
         document.getElementById('counter').innerText = `Say: ${dPts.length}`;
         if(dPts.length) {
-            document.getElementById('search').disabled = false; 
-            document.getElementById('filter').disabled = false;
+            document.getElementById('search').disabled = false; document.getElementById('filter').disabled = false;
             if(s) map.fitBounds(new L.featureGroup(dPts).getBounds());
         }
     }
@@ -178,71 +170,20 @@
         const isP = dP[id], isV = vH[id];
         const lastDate = isV ? vH[id] : "Yoxdur";
         let distText = `<div class="dist-info">Startdan: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km<br>Dayanacağa: ${(map.distance(m.getLatLng(), eL) / 1000).toFixed(2)} km</div>`;
-
         const h = `<div class="pop-card"><b>${p.District || 'Adsız'}</b><div class="pop-info">ID: ${id}<br>Son: ${lastDate}</div>${distText}<div class="action-grid"><button onclick="mV('${id}')" class="btn-s" style="background:#00b894">Bitir</button><button onclick="tP('${id}')" class="btn-s" style="background:#fdcb6e; color:#333">${isP ? 'Çıx' : 'Plana sal'}</button></div><a href="waze://?ll=${p.Latitude},${p.Longitude}&navigate=yes" class="waze-btn"><i class="fa-brands fa-waze"></i> WAZE</a></div>`;
         L.popup().setLatLng(m.getLatLng()).setContent(h).openOn(map);
     }
 
     window.mV = (id) => { vH[id] = new Date().toLocaleString('az-AZ'); localStorage.setItem('vH', JSON.stringify(vH)); refreshMap(); };
     window.tP = (id) => { if(dP[id]) delete dP[id]; else dP[id] = true; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); };
-    
-    window.clearCurrentPlan = () => {
-        const count = Object.keys(dP).length;
-        if(count === 0) return alert("Planda nöqtə yoxdur.");
-        if(confirm(`Plandakı ${count} nöqtə silinsin?`)) { dP = {}; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); }
-    };
-
-    function refreshMap() {
-        const curZoom = map.getZoom(), curCenter = map.getCenter();
-        const lastData = localStorage.getItem('lastC');
-        if(lastData) process(JSON.parse(lastData), false);
-        map.setView(curCenter, curZoom);
-        map.closePopup();
-    }
-
-    function filterM() {
-        const s = document.getElementById('search').value.toLowerCase();
-        const f = document.getElementById('filter').value;
-        mLayer.clearLayers();
-        let count = 0;
-        dPts.forEach(m => {
-            const id = m.pData.id.toLowerCase(), name = (m.pData.District || "").toLowerCase();
-            const matchS = id.includes(s) || name.includes(s);
-            let matchF = (f === 'all') || (f === 'plan' && dP[m.pData.id]) || (f === 'visited' && vH[m.pData.id]) || (f === 'pending' && !vH[m.pData.id]);
-            if(matchS && matchF) { m.addTo(mLayer); count++; }
-        });
-        document.getElementById('counter').innerText = `Say: ${count}`;
-    }
-
-    window.showMyRoute = () => {
-        let planList = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]);
-        if(planList.length === 0) return alert("Planda nöqtə yoxdur!");
-        document.getElementById('filter').value = 'plan';
-        filterM();
-        const sorted = getOptimizedRoute(planList.map(m => m.pData));
-        const firstM = dPts.find(m => m.pData.id === sorted[0]['SubRetailer Draw ID']);
-        map.setView(firstM.getLatLng(), 15);
-        showP(firstM);
-    };
-
-    window.exportReport = () => {
-        if(Object.keys(vH).length === 0) return alert("Ziyarət yoxdur!");
-        let csv = "data:text/csv;charset=utf-8,ID,Mağaza,Ziyarət Vaxtı\n";
-        const data = JSON.parse(localStorage.getItem('lastC') || "[]");
-        Object.keys(vH).forEach(id => {
-            const shop = data.find(item => item['SubRetailer Draw ID'] === id);
-            csv += `${id},${shop ? shop.District : "Naməlum"},${vH[id]}\n`;
-        });
-        const link = document.createElement("a");
-        link.setAttribute("href", encodeURI(csv));
-        link.setAttribute("download", `Hesabat_${new Date().toLocaleDateString()}.csv`);
-        link.click();
-    };
-
-    function clearData() { if(confirm("Bütün məlumatlar silinsin?")) { localStorage.clear(); location.reload(); } }
+    window.clearCurrentPlan = () => { if(Object.keys(dP).length === 0) return alert("Planda nöqtə yoxdur."); if(confirm("Plan silinsin?")) { dP = {}; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); } };
+    function refreshMap() { const curZoom = map.getZoom(), curCenter = map.getCenter(), lastData = localStorage.getItem('lastC'); if(lastData) process(JSON.parse(lastData), false); map.setView(curCenter, curZoom); map.closePopup(); }
+    function filterM() { const s = document.getElementById('search').value.toLowerCase(), f = document.getElementById('filter').value; mLayer.clearLayers(); let count = 0; dPts.forEach(m => { const id = m.pData.id.toLowerCase(), name = (m.pData.District || "").toLowerCase(); const matchS = id.includes(s) || name.includes(s); let matchF = (f === 'all') || (f === 'plan' && dP[m.pData.id]) || (f === 'visited' && vH[m.pData.id]) || (f === 'pending' && !vH[m.pData.id]); if(matchS && matchF) { m.addTo(mLayer); count++; } }); document.getElementById('counter').innerText = `Say: ${count}`; }
+    window.showMyRoute = () => { let planList = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]); if(planList.length === 0) return alert("Planda nöqtə yoxdur!"); document.getElementById('filter').value = 'plan'; filterM(); const sorted = getOptimizedRoute(planList.map(m => m.pData)); const firstM = dPts.find(m => m.pData.id === sorted[0]['SubRetailer Draw ID']); map.setView(firstM.getLatLng(), 15); showP(firstM); };
+    window.exportReport = () => { if(Object.keys(vH).length === 0) return alert("Ziyarət yoxdur!"); let csv = "data:text/csv;charset=utf-8,ID,Mağaza,Ziyarət Vaxtı\n"; const data = JSON.parse(localStorage.getItem('lastC') || "[]"); Object.keys(vH).forEach(id => { const shop = data.find(item => item['SubRetailer Draw ID'] === id); csv += `${id},${shop ? shop.District : "Naməlum"},${vH[id]}\n`; }); const link = document.createElement("a"); link.setAttribute("href", encodeURI(csv)); link.setAttribute("download", `Hesabat_${new Date().toLocaleDateString()}.csv`); link.click(); };
+    function clearData() { if(confirm("Sıfırlansın?")) { localStorage.clear(); location.reload(); } }
     document.getElementById('search').oninput = filterM;
-    const saved = localStorage.getItem('lastC'); 
-    if(saved) process(JSON.parse(saved), false); else setPoints();
+    const saved = localStorage.getItem('lastC'); if(saved) process(JSON.parse(saved), false); else setPoints();
 </script>
 </body>
 </html>

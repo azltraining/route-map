@@ -21,7 +21,8 @@
         .btn-clear-plan { background: #e67e22; color: white; border: none; width: 38px; height: 38px; border-radius: 8px; cursor: pointer; }
         #map { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
         
-        .copyright-tag { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.8); padding: 4px 12px; border-radius: 20px; font-size: 11px; color: #333; font-weight: 500; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        /* Copyright Style */
+        .copyright-tag { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.85); padding: 5px 15px; border-radius: 20px; font-size: 11px; color: #333; font-weight: bold; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; }
 
         .marker-pin { width: 32px; height: 32px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -16px 0 0 -16px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; }
         .marker-pin span { transform: rotate(45deg); color: #000; font-weight: bold; font-size: 13px; pointer-events: none; }
@@ -90,7 +91,7 @@
 </div>
 
 <div id="map">
-    <div class="copyright-tag">[copyright] This application was created by Elman Huseynov</div>
+    <div class="copyright-tag">© Bu application Elman Huseynov tərəfindən yaradılmışdır</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

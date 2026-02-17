@@ -21,8 +21,21 @@
         .btn-clear-plan { background: #e67e22; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 16px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
         #map { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
         .copyright-overlay { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.85); padding: 4px 12px; border-radius: 20px; font-size: 10px; color: #333; font-weight: 500; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .marker-pin { width: 28px; height: 28px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -14px 0 0 -14px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .route-num { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: #6c5ce7; color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 1px solid white; z-index: 1000; }
+        
+        /* Marker Pin və Daxili Nömrə */
+        .marker-pin { 
+            width: 32px; height: 32px; border-radius: 50% 50% 50% 0; 
+            position: absolute; transform: rotate(-45deg); 
+            left: 50%; top: 50%; margin: -16px 0 0 -16px; 
+            border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .marker-pin span { 
+            transform: rotate(45deg); color: white; 
+            font-weight: bold; font-size: 12px; font-family: sans-serif;
+            pointer-events: none;
+        }
+
         .pop-card { text-align: center; min-width: 170px; }
         .pop-card b { font-size: 15px; color: var(--p); display: block; margin-bottom: 2px; }
         .pop-info { font-size: 11px; color: #666; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
@@ -80,7 +93,7 @@
     let uL = null, eL = null, mLayer = L.layerGroup(), dPts = [];
     let vH = JSON.parse(localStorage.getItem('vH')) || {}; 
     let dP = JSON.parse(localStorage.getItem('dP')) || {}; 
-    let isRouteCalculated = false; // Nömrələri göstərib-göstərməmək üçün bayraq
+    let isRouteCalculated = false;
 
     function setPoints() {
         const sVal = document.getElementById('startPoint').value || "40.3791468082409,49.86134006965304";
@@ -91,7 +104,7 @@
     }
 
     function updateRouteCalculations() {
-        isRouteCalculated = false; // Başlanğıc və ya son nöqtə dəyişərsə nömrələri gizlə
+        isRouteCalculated = false;
         setPoints();
         refreshMap();
     }
@@ -138,17 +151,16 @@
                 const isP = dP[id], isV = vH[id];
                 const col = isV ? '#00b894' : (isP ? '#fdcb6e' : '#0984e3');
                 
-                let numHtml = "";
-                // Nömrələmə yalnız "Yolu Göstər" basıldıqda (isRouteCalculated === true) görünür
+                let numContent = "";
                 if(isP && !isV && isRouteCalculated) {
                     let idx = optimizedPlan.findIndex(x => x['SubRetailer Draw ID'] === id);
-                    if(idx !== -1) numHtml = `<b class="route-num">${idx + 1}</b>`;
+                    if(idx !== -1) numContent = `<span>${idx + 1}</span>`;
                 }
 
                 const mIcon = L.divIcon({
                     className: '', 
-                    html: `<div style="background:${col}" class="marker-pin"></div>${numHtml}`, 
-                    iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -40]
+                    html: `<div style="background:${col}" class="marker-pin">${numContent}</div>`, 
+                    iconSize: [32, 48], iconAnchor: [16, 48], popupAnchor: [0, -45]
                 });
                 const m = L.marker([lat, lng], { icon: mIcon });
                 m.pData = { ...r, id };
@@ -167,15 +179,21 @@
         const p = m.pData, id = p.id;
         const isP = dP[id], isV = vH[id];
         const lastDate = isV ? vH[id] : "Yoxdur";
-        let distText = `<div class="dist-info">Startdan: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km<br>Dayanacağa: ${(map.distance(m.getLatLng(), eL) / 1000).toFixed(2)} km</div>`;
-        const h = `<div class="pop-card"><b>${p.District || 'Adsız'}</b><div class="pop-info">ID: ${id}<br>Son: ${lastDate}</div>${distText}<div class="action-grid"><button onclick="mV('${id}')" class="btn-s" style="background:#00b894">Bitir</button><button onclick="tP('${id}')" class="btn-s" style="background:#fdcb6e; color:#333">${isP ? 'Çıx' : 'Plana sal'}</button></div><a href="waze://?ll=${p.Latitude},${p.Longitude}&navigate=yes" class="waze-btn"><i class="fa-brands fa-waze"></i> WAZE</a></div>`;
+        
+        // Məsafə bölməsi yalnız marşrut hesablandıqda görünür
+        let distHtml = "";
+        if(isRouteCalculated && isP && !isV) {
+            distHtml = `<div class="dist-info">Startdan: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km<br>Dayanacağa: ${(map.distance(m.getLatLng(), eL) / 1000).toFixed(2)} km</div>`;
+        }
+
+        const h = `<div class="pop-card"><b>${p.District || 'Adsız'}</b><div class="pop-info">ID: ${id}<br>Son: ${lastDate}</div>${distHtml}<div class="action-grid"><button onclick="mV('${id}')" class="btn-s" style="background:#00b894">Bitir</button><button onclick="tP('${id}')" class="btn-s" style="background:#fdcb6e; color:#333">${isP ? 'Çıx' : 'Plana sal'}</button></div><a href="waze://?ll=${p.Latitude},${p.Longitude}&navigate=yes" class="waze-btn"><i class="fa-brands fa-waze"></i> WAZE</a></div>`;
         L.popup().setLatLng(m.getLatLng()).setContent(h).openOn(map);
     }
 
     window.mV = (id) => { vH[id] = new Date().toLocaleString('az-AZ'); localStorage.setItem('vH', JSON.stringify(vH)); refreshMap(); };
     window.tP = (id) => { 
         if(dP[id]) delete dP[id]; else dP[id] = true; 
-        isRouteCalculated = false; // Hər yeni nöqtə əlavə edildikdə nömrələri gizlə ki, "Yolu Göstər" basılsın
+        isRouteCalculated = false; 
         localStorage.setItem('dP', JSON.stringify(dP)); 
         refreshMap(); 
     };
@@ -184,14 +202,16 @@
         let planList = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]);
         if(planList.length === 0) return alert("Planda nöqtə yoxdur!");
         
-        isRouteCalculated = true; // Nömrələməni aktiv et
+        isRouteCalculated = true;
         document.getElementById('filter').value = 'plan';
-        filterM(); // Yalnız plandakıları göstər
+        filterM();
 
         const sorted = getOptimizedRoute(planList.map(m => m.pData));
         const firstM = dPts.find(m => m.pData.id === sorted[0]['SubRetailer Draw ID']);
-        map.setView(firstM.getLatLng(), 15);
-        showP(firstM);
+        if(firstM) {
+            map.setView(firstM.getLatLng(), 15);
+            showP(firstM);
+        }
     };
 
     window.clearCurrentPlan = () => { if(confirm("Plan silinsin?")) { dP = {}; isRouteCalculated = false; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); } };

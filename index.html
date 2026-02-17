@@ -22,7 +22,7 @@
         #map { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
         .copyright-overlay { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.85); padding: 4px 12px; border-radius: 20px; font-size: 10px; color: #333; font-weight: 500; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .marker-pin { width: 28px; height: 28px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -14px 0 0 -14px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .route-num { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: var(--p); color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 1px solid white; z-index: 1000; }
+        .route-num { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: #6c5ce7; color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 1px solid white; z-index: 1000; }
         .pop-card { text-align: center; min-width: 170px; }
         .pop-card b { font-size: 15px; color: var(--p); display: block; margin-bottom: 2px; }
         .pop-info { font-size: 11px; color: #666; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
@@ -80,23 +80,18 @@
     let uL = null, eL = null, mLayer = L.layerGroup(), dPts = [];
     let vH = JSON.parse(localStorage.getItem('vH')) || {}; 
     let dP = JSON.parse(localStorage.getItem('dP')) || {}; 
+    let isRouteCalculated = false; // Nömrələri göstərib-göstərməmək üçün bayraq
 
     function setPoints() {
-        const sVal = document.getElementById('startPoint').value;
-        const eVal = document.getElementById('endPoint').value;
-        
-        // Default koordinatlar (əgər hələ heç nə seçilməyibsə, Parking və Elmanı əsas götürürük)
-        const defS = "40.3791468082409,49.86134006965304";
-        const defE = "40.412483117894894,49.9862986638301";
-
-        const sC = (sVal || defS).split(',');
-        const eC = (eVal || defE).split(',');
-        
+        const sVal = document.getElementById('startPoint').value || "40.3791468082409,49.86134006965304";
+        const eVal = document.getElementById('endPoint').value || "40.412483117894894,49.9862986638301";
+        const sC = sVal.split(','), eC = eVal.split(',');
         uL = L.latLng(parseFloat(sC[0]), parseFloat(sC[1]));
         eL = L.latLng(parseFloat(eC[0]), parseFloat(eC[1]));
     }
 
     function updateRouteCalculations() {
+        isRouteCalculated = false; // Başlanğıc və ya son nöqtə dəyişərsə nömrələri gizlə
         setPoints();
         refreshMap();
     }
@@ -113,8 +108,7 @@
     function getOptimizedRoute(planData) {
         if (planData.length === 0) return [];
         let remaining = [...planData].map(item => ({
-            ...item,
-            pos: L.latLng(parseFloat(item.Latitude?.replace(',','.')), parseFloat(item.Longitude?.replace(',','.')))
+            ...item, pos: L.latLng(parseFloat(item.Latitude?.replace(',','.')), parseFloat(item.Longitude?.replace(',','.')))
         }));
         remaining.sort((a, b) => map.distance(a.pos, eL) - map.distance(b.pos, eL));
         let finalNode = remaining.shift();
@@ -136,17 +130,21 @@
         setPoints();
         const planList = data.filter(x => dP[x['SubRetailer Draw ID']] && !vH[x['SubRetailer Draw ID']]);
         const optimizedPlan = getOptimizedRoute(planList);
+
         data.forEach(r => {
             const lat = parseFloat(r.Latitude?.replace(',','.')), lng = parseFloat(r.Longitude?.replace(',','.'));
             if(!isNaN(lat) && !isNaN(lng)) {
                 const id = r['SubRetailer Draw ID'];
                 const isP = dP[id], isV = vH[id];
                 const col = isV ? '#00b894' : (isP ? '#fdcb6e' : '#0984e3');
+                
                 let numHtml = "";
-                if(isP && !isV) {
+                // Nömrələmə yalnız "Yolu Göstər" basıldıqda (isRouteCalculated === true) görünür
+                if(isP && !isV && isRouteCalculated) {
                     let idx = optimizedPlan.findIndex(x => x['SubRetailer Draw ID'] === id);
                     if(idx !== -1) numHtml = `<b class="route-num">${idx + 1}</b>`;
                 }
+
                 const mIcon = L.divIcon({
                     className: '', 
                     html: `<div style="background:${col}" class="marker-pin"></div>${numHtml}`, 
@@ -175,12 +173,31 @@
     }
 
     window.mV = (id) => { vH[id] = new Date().toLocaleString('az-AZ'); localStorage.setItem('vH', JSON.stringify(vH)); refreshMap(); };
-    window.tP = (id) => { if(dP[id]) delete dP[id]; else dP[id] = true; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); };
-    window.clearCurrentPlan = () => { if(Object.keys(dP).length === 0) return alert("Planda nöqtə yoxdur."); if(confirm("Plan silinsin?")) { dP = {}; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); } };
+    window.tP = (id) => { 
+        if(dP[id]) delete dP[id]; else dP[id] = true; 
+        isRouteCalculated = false; // Hər yeni nöqtə əlavə edildikdə nömrələri gizlə ki, "Yolu Göstər" basılsın
+        localStorage.setItem('dP', JSON.stringify(dP)); 
+        refreshMap(); 
+    };
+
+    window.showMyRoute = () => {
+        let planList = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]);
+        if(planList.length === 0) return alert("Planda nöqtə yoxdur!");
+        
+        isRouteCalculated = true; // Nömrələməni aktiv et
+        document.getElementById('filter').value = 'plan';
+        filterM(); // Yalnız plandakıları göstər
+
+        const sorted = getOptimizedRoute(planList.map(m => m.pData));
+        const firstM = dPts.find(m => m.pData.id === sorted[0]['SubRetailer Draw ID']);
+        map.setView(firstM.getLatLng(), 15);
+        showP(firstM);
+    };
+
+    window.clearCurrentPlan = () => { if(confirm("Plan silinsin?")) { dP = {}; isRouteCalculated = false; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); } };
     function refreshMap() { const curZoom = map.getZoom(), curCenter = map.getCenter(), lastData = localStorage.getItem('lastC'); if(lastData) process(JSON.parse(lastData), false); map.setView(curCenter, curZoom); map.closePopup(); }
     function filterM() { const s = document.getElementById('search').value.toLowerCase(), f = document.getElementById('filter').value; mLayer.clearLayers(); let count = 0; dPts.forEach(m => { const id = m.pData.id.toLowerCase(), name = (m.pData.District || "").toLowerCase(); const matchS = id.includes(s) || name.includes(s); let matchF = (f === 'all') || (f === 'plan' && dP[m.pData.id]) || (f === 'visited' && vH[m.pData.id]) || (f === 'pending' && !vH[m.pData.id]); if(matchS && matchF) { m.addTo(mLayer); count++; } }); document.getElementById('counter').innerText = `Say: ${count}`; }
-    window.showMyRoute = () => { let planList = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]); if(planList.length === 0) return alert("Planda nöqtə yoxdur!"); document.getElementById('filter').value = 'plan'; filterM(); const sorted = getOptimizedRoute(planList.map(m => m.pData)); const firstM = dPts.find(m => m.pData.id === sorted[0]['SubRetailer Draw ID']); map.setView(firstM.getLatLng(), 15); showP(firstM); };
-    window.exportReport = () => { if(Object.keys(vH).length === 0) return alert("Ziyarət yoxdur!"); let csv = "data:text/csv;charset=utf-8,ID,Mağaza,Ziyarət Vaxtı\n"; const data = JSON.parse(localStorage.getItem('lastC') || "[]"); Object.keys(vH).forEach(id => { const shop = data.find(item => item['SubRetailer Draw ID'] === id); csv += `${id},${shop ? shop.District : "Naməlum"},${vH[id]}\n`; }); const link = document.createElement("a"); link.setAttribute("href", encodeURI(csv)); link.setAttribute("download", `Hesabat_${new Date().toLocaleDateString()}.csv`); link.click(); };
+    window.exportReport = () => { let csv = "data:text/csv;charset=utf-8,ID,Mağaza,Ziyarət Vaxtı\n"; const data = JSON.parse(localStorage.getItem('lastC') || "[]"); Object.keys(vH).forEach(id => { const shop = data.find(item => item['SubRetailer Draw ID'] === id); csv += `${id},${shop ? shop.District : "Naməlum"},${vH[id]}\n`; }); const link = document.createElement("a"); link.setAttribute("href", encodeURI(csv)); link.setAttribute("download", `Hesabat.csv`); link.click(); };
     function clearData() { if(confirm("Sıfırlansın?")) { localStorage.clear(); location.reload(); } }
     document.getElementById('search').oninput = filterM;
     const saved = localStorage.getItem('lastC'); if(saved) process(JSON.parse(saved), false); else setPoints();

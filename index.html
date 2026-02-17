@@ -7,38 +7,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
         :root { --p: #003344; --s: #fdcb6e; --v: #00b894; --bg: #f4f7f6; --c: #ffffff; }
-
-        html, body { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            height: -webkit-fill-available; overflow: hidden; 
-            font-family: 'Segoe UI', sans-serif; background: var(--bg);
-        }
-
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; height: -webkit-fill-available; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: var(--bg); }
         body { display: flex; flex-direction: column; min-height: 100vh; min-height: -webkit-fill-available; }
-        
-        #header { 
-            background: var(--c); padding: 10px 10px 12px 10px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1001; flex-shrink: 0; 
-        }
+        #header { background: var(--c); padding: 10px 10px 12px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1001; flex-shrink: 0; }
         .row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; width: 100%; }
         .row:last-child { margin-bottom: 0; }
-        
         .stat-badge { background: #eee; padding: 4px 8px; border-radius: 15px; font-size: 11px; font-weight: bold; color: var(--p); white-space: nowrap; }
         input { flex: 1.5; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; min-width: 0; -webkit-appearance: none; }
         select { flex: 1; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; background-color: #fff; cursor: pointer; -webkit-appearance: none; }
-        
         .btn-csv { background: var(--p); color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
         .icon-btn { border: 1.5px solid #e0e0e0; background: white; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--p); flex-shrink: 0; }
         .btn-route { background: #6c5ce7; color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; border: none; }
         .btn-clear-plan { background: #e67e22; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 16px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
-
         #map { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
-
         .copyright-overlay { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.85); padding: 4px 12px; border-radius: 20px; font-size: 10px; color: #333; font-weight: 500; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-
         .marker-pin { width: 28px; height: 28px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -14px 0 0 -14px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .route-num { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: var(--p); color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 1px solid white; z-index: 1000; }
-        
         .pop-card { text-align: center; min-width: 170px; }
         .pop-card b { font-size: 15px; color: var(--p); display: block; margin-bottom: 2px; }
         .pop-info { font-size: 11px; color: #666; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
@@ -54,17 +38,22 @@
     <div class="row">
         <label class="btn-csv"><i class="fa-solid fa-file-upload"></i> CSV <input type="file" id="csvFile" style="display:none" accept=".csv"></label>
         
-        <select id="startPoint" onchange="updateRouteCalculations()" style="max-width: 200px; border: 1.5px solid #6c5ce7; font-weight: bold;">
-            <option value="40.37640719466837,49.86272695730056">Ofis</option>
-            <option value="40.3791468082409,49.86134006965304">Parking</option>
-            <option value="40.39627503668952,49.81617022857304">Fortuna Baş ofis</option>
+        <select id="startPoint" onchange="updateRouteCalculations()" title="Başlanğıc" style="max-width: 130px; border-color: #6c5ce7;">
+            <option value="40.37640719466837,49.86272695730056">Ofis (S)</option>
+            <option value="40.3791468082409,49.86134006965304" selected>Parking (S)</option>
+            <option value="40.39627503668952,49.81617022857304">Fortuna (S)</option>
+        </select>
+
+        <select id="endPoint" onchange="updateRouteCalculations()" title="Dayanacaq (Ev)" style="max-width: 130px; border-color: #00b894;">
+            <option value="40.412483117894894,49.9862986638301">Elman (E)</option>
+            <option value="40.41266389544212,49.81891908864549">Murad (E)</option>
+            <option value="40.45234747161522,49.77945708048582">Səxavət (E)</option>
         </select>
 
         <button class="btn-route" onclick="showMyRoute()"><i class="fa-solid fa-route"></i> Yolu Göstər</button>
-        
         <div style="flex:1"></div>
         <button class="btn-clear-plan" onclick="clearCurrentPlan()" title="Planı Təmizlə"><i class="fa-solid fa-calendar-xmark"></i></button>
-        <button class="icon-btn" onclick="exportReport()" title="Hesabat Yüklə"><i class="fa-solid fa-file-export"></i></button>
+        <button class="icon-btn" onclick="exportReport()" title="Hesabat"><i class="fa-solid fa-file-export"></i></button>
         <button class="icon-btn" onclick="clearData()" title="Sıfırla"><i class="fa-solid fa-trash-can"></i></button>
     </div>
     <div class="row">
@@ -86,18 +75,19 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
-    let uL = null, uM = null, mLayer = L.layerGroup(), dPts = [];
+    let uL = null, eL = null, mLayer = L.layerGroup(), dPts = [];
     let vH = JSON.parse(localStorage.getItem('vH')) || {}; 
     let dP = JSON.parse(localStorage.getItem('dP')) || {}; 
 
-    // İlkin olaraq seçilmiş başlanğıc nöqtəsini uL (User Location) kimi təyin edirik
-    function setInitialLocation() {
-        const coords = document.getElementById('startPoint').value.split(',');
-        uL = L.latLng(parseFloat(coords[0]), parseFloat(coords[1]));
+    function setPoints() {
+        const sC = document.getElementById('startPoint').value.split(',');
+        const eC = document.getElementById('endPoint').value.split(',');
+        uL = L.latLng(parseFloat(sC[0]), parseFloat(sC[1]));
+        eL = L.latLng(parseFloat(eC[0]), parseFloat(eC[1]));
     }
 
     function updateRouteCalculations() {
-        setInitialLocation();
+        setPoints();
         refreshMap();
     }
 
@@ -110,12 +100,38 @@
         Papa.parse(f, {header: true, skipEmptyLines: true, complete: (r) => { process(r.data, true); }});
     };
 
+    // Zəncirvari Optimallaşdırma Alqoritmi (Start -> Mağazalar -> Ev)
+    function getOptimizedRoute(planData) {
+        if (planData.length === 0) return [];
+        let sorted = [];
+        let remaining = [...planData].map(item => ({
+            ...item,
+            pos: L.latLng(parseFloat(item.Latitude?.replace(',','.')), parseFloat(item.Longitude?.replace(',','.')))
+        }));
+
+        let currentPos = uL;
+
+        while (remaining.length > 0) {
+            // Hər addımda həm cari nöqtəyə yaxınlığı, həm də evə doğru irəliləməni nəzərə alırıq
+            remaining.sort((a, b) => {
+                let distA = map.distance(currentPos, a.pos) + (map.distance(a.pos, eL) * 0.3);
+                let distB = map.distance(currentPos, b.pos) + (map.distance(b.pos, eL) * 0.3);
+                return distA - distB;
+            });
+            let next = remaining.shift();
+            sorted.push(next);
+            currentPos = next.pos;
+        }
+        return sorted;
+    }
+
     function process(data, s) {
         mLayer.clearLayers(); dPts.length = 0;
         if(s) localStorage.setItem('lastC', JSON.stringify(data));
-        
-        // Başlanğıc nöqtəsini götürürük
-        setInitialLocation();
+        setPoints();
+
+        const planList = data.filter(x => dP[x['SubRetailer Draw ID']] && !vH[x['SubRetailer Draw ID']]);
+        const optimizedPlan = getOptimizedRoute(planList);
 
         data.forEach(r => {
             const lat = parseFloat(r.Latitude?.replace(',','.')), lng = parseFloat(r.Longitude?.replace(',','.'));
@@ -126,14 +142,7 @@
                 
                 let numHtml = "";
                 if(isP && !isV) {
-                    // Planda olanları başlanğıc nöqtəsinə görə sıralayırıq
-                    let currentPlan = data.filter(x => dP[x['SubRetailer Draw ID']] && !vH[x['SubRetailer Draw ID']]);
-                    currentPlan.sort((a,b) => {
-                        let posA = L.latLng(parseFloat(a.Latitude?.replace(',','.')), parseFloat(a.Longitude?.replace(',','.')));
-                        let posB = L.latLng(parseFloat(b.Latitude?.replace(',','.')), parseFloat(b.Longitude?.replace(',','.')));
-                        return map.distance(uL, posA) - map.distance(uL, posB);
-                    });
-                    let idx = currentPlan.findIndex(x => x['SubRetailer Draw ID'] === id);
+                    let idx = optimizedPlan.findIndex(x => x['SubRetailer Draw ID'] === id);
                     if(idx !== -1) numHtml = `<b class="route-num">${idx + 1}</b>`;
                 }
 
@@ -164,42 +173,19 @@
         const p = m.pData, id = p.id;
         const isP = dP[id], isV = vH[id];
         const lastDate = isV ? vH[id] : "Yoxdur";
-        let distText = `<div class="dist-info">Başlanğıcdan: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km</div>`;
+        let distText = `<div class="dist-info">Başlanğıcdan: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km<br>Dayanacağa: ${(map.distance(m.getLatLng(), eL) / 1000).toFixed(2)} km</div>`;
 
-        const h = `
-            <div class="pop-card">
-                <b>${p.District || 'Adsız'}</b>
-                <div class="pop-info">ID: ${id}<br>Son: ${lastDate}</div>
-                ${distText}
-                <div class="action-grid">
-                    <button onclick="mV('${id}')" class="btn-s" style="background:#00b894">Bitir</button>
-                    <button onclick="tP('${id}')" class="btn-s" style="background:#fdcb6e; color:#333">${isP ? 'Çıx' : 'Plana sal'}</button>
-                </div>
-                <a href="waze://?ll=${p.Latitude},${p.Longitude}&navigate=yes" class="waze-btn"><i class="fa-brands fa-waze"></i> WAZE</a>
-            </div>`;
+        const h = `<div class="pop-card"><b>${p.District || 'Adsız'}</b><div class="pop-info">ID: ${id}<br>Son: ${lastDate}</div>${distText}<div class="action-grid"><button onclick="mV('${id}')" class="btn-s" style="background:#00b894">Bitir</button><button onclick="tP('${id}')" class="btn-s" style="background:#fdcb6e; color:#333">${isP ? 'Çıx' : 'Plana sal'}</button></div><a href="waze://?ll=${p.Latitude},${p.Longitude}&navigate=yes" class="waze-btn"><i class="fa-brands fa-waze"></i> WAZE</a></div>`;
         L.popup().setLatLng(m.getLatLng()).setContent(h).openOn(map);
     }
 
-    window.mV = (id) => {
-        vH[id] = new Date().toLocaleString('az-AZ');
-        localStorage.setItem('vH', JSON.stringify(vH));
-        refreshMap();
-    };
-
-    window.tP = (id) => {
-        if(dP[id]) delete dP[id]; else dP[id] = true;
-        localStorage.setItem('dP', JSON.stringify(dP));
-        refreshMap();
-    };
-
+    window.mV = (id) => { vH[id] = new Date().toLocaleString('az-AZ'); localStorage.setItem('vH', JSON.stringify(vH)); refreshMap(); };
+    window.tP = (id) => { if(dP[id]) delete dP[id]; else dP[id] = true; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); };
+    
     window.clearCurrentPlan = () => {
         const count = Object.keys(dP).length;
-        if(count === 0) return alert("Planda təmizlənəcək nöqtə yoxdur.");
-        if(confirm(`Plandakı ${count} nöqtə silinsin?`)) {
-            dP = {}; 
-            localStorage.setItem('dP', JSON.stringify(dP));
-            refreshMap();
-        }
+        if(count === 0) return alert("Planda nöqtə yoxdur.");
+        if(confirm(`Plandakı ${count} nöqtə silinsin?`)) { dP = {}; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); }
     };
 
     function refreshMap() {
@@ -225,14 +211,14 @@
     }
 
     window.showMyRoute = () => {
-        let plan = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]);
-        if(plan.length === 0) return alert("Planda nöqtə yoxdur!");
+        let planList = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]);
+        if(planList.length === 0) return alert("Planda nöqtə yoxdur!");
         document.getElementById('filter').value = 'plan';
         filterM();
-        // Cari seçilmiş başlanğıc nöqtəsinə görə sıralama
-        plan.sort((a,b) => map.distance(a.getLatLng(), uL) - map.distance(b.getLatLng(), uL));
-        map.setView(plan[0].getLatLng(), 15);
-        showP(plan[0]);
+        const sorted = getOptimizedRoute(planList.map(m => m.pData));
+        const firstM = dPts.find(m => m.pData.id === sorted[0]['SubRetailer Draw ID']);
+        map.setView(firstM.getLatLng(), 15);
+        showP(firstM);
     };
 
     window.exportReport = () => {
@@ -249,16 +235,10 @@
         link.click();
     };
 
-    function clearData() { 
-        if(confirm("Bütün məlumatlar silinsin?")) { 
-            localStorage.clear(); 
-            location.reload(); 
-        } 
-    }
-
+    function clearData() { if(confirm("Bütün məlumatlar silinsin?")) { localStorage.clear(); location.reload(); } }
     document.getElementById('search').oninput = filterM;
     const saved = localStorage.getItem('lastC'); 
-    if(saved) process(JSON.parse(saved), false); else setInitialLocation();
+    if(saved) process(JSON.parse(saved), false); else setPoints();
 </script>
 </body>
 </html>

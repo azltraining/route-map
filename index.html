@@ -30,7 +30,8 @@
             display: flex; align-items: center; justify-content: center;
         }
         .marker-pin span { 
-            transform: rotate(45deg); color: white; 
+            transform: rotate(45deg); 
+            color: #000; /* Rəqəm artıq qara rəngdədir */
             font-weight: bold; font-size: 13px; font-family: sans-serif;
             pointer-events: none;
         }
@@ -181,7 +182,6 @@
         const lastDate = isV ? vH[id] : "Yoxdur";
         
         let distHtml = "";
-        // Məsafə yalnız nömrələnmiş nöqtələrdə (isRouteCalculated zamanı) çıxır
         if(isRouteCalculated && isP && !isV) {
             distHtml = `<div class="dist-info">Startdan: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km<br>Dayanacağa: ${(map.distance(m.getLatLng(), eL) / 1000).toFixed(2)} km</div>`;
         }
@@ -190,11 +190,18 @@
         L.popup().setLatLng(m.getLatLng()).setContent(h).openOn(map);
     }
 
-    window.mV = (id) => { vH[id] = new Date().toLocaleString('az-AZ'); localStorage.setItem('vH', JSON.stringify(vH)); refreshMap(); };
+    window.mV = (id) => { 
+        vH[id] = new Date().toLocaleString('az-AZ'); 
+        localStorage.setItem('vH', JSON.stringify(vH)); 
+        map.closePopup(); // Bitirdikdə popup bağlansın
+        refreshMap(); 
+    };
+
     window.tP = (id) => { 
         if(dP[id]) delete dP[id]; else dP[id] = true; 
-        isRouteCalculated = false; // Plan dəyişəndə nömrələri söndür
+        isRouteCalculated = false; 
         localStorage.setItem('dP', JSON.stringify(dP)); 
+        map.closePopup(); // Plana saldıqda və ya çıxardıqda popup bağlansın
         refreshMap(); 
     };
 
@@ -205,25 +212,17 @@
         let planCount = Object.keys(dP).length;
         if(planCount === 0) return alert("Planda nöqtə yoxdur!");
         
-        isRouteCalculated = true; // Nömrələməni aktiv et
+        isRouteCalculated = true;
         
-        // Markerləri yenidən çək ki nömrələr dərhal görünsün
+        // Markerləri yenidən çək (nömrələrin görünməsi üçün)
         process(JSON.parse(lastData), false);
 
         // Filteri plan rejiminə keçir
         document.getElementById('filter').value = 'plan';
         filterM();
 
-        // Birinci nöqtəyə fokuslan
-        const planList = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]);
-        const optimized = getOptimizedRoute(planList.map(m => m.pData));
-        if(optimized.length > 0) {
-            const firstM = dPts.find(m => m.pData.id === optimized[0]['SubRetailer Draw ID']);
-            if(firstM) {
-                map.setView(firstM.getLatLng(), 15);
-                showP(firstM);
-            }
-        }
+        // AVTOMATİK ZOOM VƏ POPUP LƏĞV EDİLDİ
+        // Sadəcə sıralamanı xəritə üzərində göstərir
     };
 
     window.clearCurrentPlan = () => { if(confirm("Plan silinsin?")) { dP = {}; isRouteCalculated = false; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); } };

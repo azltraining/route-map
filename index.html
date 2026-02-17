@@ -33,8 +33,6 @@
         .btn-clear-plan { background: #e67e22; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 16px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
 
         #map { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
-        .controls { position: absolute; bottom: 45px; right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
-        .btn-act { width: 55px; height: 55px; border-radius: 18px; background: white; border: none; box-shadow: 0 6px 16px rgba(0,0,0,0.15); font-size: 22px; display: flex; align-items: center; justify-content: center; outline: none; }
 
         .copyright-overlay { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.85); padding: 4px 12px; border-radius: 20px; font-size: 10px; color: #333; font-weight: 500; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
@@ -55,11 +53,19 @@
 <div id="header">
     <div class="row">
         <label class="btn-csv"><i class="fa-solid fa-file-upload"></i> CSV <input type="file" id="csvFile" style="display:none" accept=".csv"></label>
+        
+        <select id="startPoint" onchange="updateRouteCalculations()" style="max-width: 200px; border: 1.5px solid #6c5ce7; font-weight: bold;">
+            <option value="40.37640719466837,49.86272695730056">Ofis</option>
+            <option value="40.3791468082409,49.86134006965304">Parking</option>
+            <option value="40.39627503668952,49.81617022857304">Fortuna Baş ofis</option>
+        </select>
+
         <button class="btn-route" onclick="showMyRoute()"><i class="fa-solid fa-route"></i> Yolu Göstər</button>
+        
         <div style="flex:1"></div>
         <button class="btn-clear-plan" onclick="clearCurrentPlan()" title="Planı Təmizlə"><i class="fa-solid fa-calendar-xmark"></i></button>
         <button class="icon-btn" onclick="exportReport()" title="Hesabat Yüklə"><i class="fa-solid fa-file-export"></i></button>
-        <button class="icon-btn" onclick="clearData()" title="Bütün məlumatlar (CSV və Tarixçə) silinsin?"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="icon-btn" onclick="clearData()" title="Sıfırla"><i class="fa-solid fa-trash-can"></i></button>
     </div>
     <div class="row">
         <div class="stat-badge" id="counter">Say: 0</div>
@@ -75,10 +81,6 @@
 
 <div id="map">
     <div class="copyright-overlay">© This application is created by AZL Training</div>
-    <div class="controls">
-        <button class="btn-act" style="background:var(--p); color:white" onclick="findN()"><i class="fa-solid fa-tower-broadcast"></i></button>
-        <button class="btn-act" style="color:#e74c3c" onclick="findMe()"><i class="fa-solid fa-location-crosshairs"></i></button>
-    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -88,25 +90,20 @@
     let vH = JSON.parse(localStorage.getItem('vH')) || {}; 
     let dP = JSON.parse(localStorage.getItem('dP')) || {}; 
 
-    function fixVH() {
-        let vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    // İlkin olaraq seçilmiş başlanğıc nöqtəsini uL (User Location) kimi təyin edirik
+    function setInitialLocation() {
+        const coords = document.getElementById('startPoint').value.split(',');
+        uL = L.latLng(parseFloat(coords[0]), parseFloat(coords[1]));
     }
-    window.addEventListener('resize', fixVH);
-    fixVH();
+
+    function updateRouteCalculations() {
+        setInitialLocation();
+        refreshMap();
+    }
 
     const map = L.map('map', {zoomControl: false, attributionControl: false}).setView([40.4, 49.8], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     mLayer.addTo(map);
-
-    function findMe() { map.locate({setView: true, maxZoom: 16}); }
-    
-    map.on('locationfound', (e) => {
-        uL = e.latlng;
-        if(!uM) uM = L.circleMarker(e.latlng, {radius: 8, color: '#fff', weight: 2, fillColor: '#007aff', fillOpacity: 1}).addTo(map);
-        else uM.setLatLng(e.latlng);
-        if(document.getElementById('filter').value === 'plan') filterM();
-    });
 
     document.getElementById('csvFile').onchange = (e) => {
         const f = e.target.files[0]; if(!f) return;
@@ -117,6 +114,9 @@
         mLayer.clearLayers(); dPts.length = 0;
         if(s) localStorage.setItem('lastC', JSON.stringify(data));
         
+        // Başlanğıc nöqtəsini götürürük
+        setInitialLocation();
+
         data.forEach(r => {
             const lat = parseFloat(r.Latitude?.replace(',','.')), lng = parseFloat(r.Longitude?.replace(',','.'));
             if(!isNaN(lat) && !isNaN(lng)) {
@@ -125,22 +125,23 @@
                 const col = isV ? '#00b894' : (isP ? '#fdcb6e' : '#0984e3');
                 
                 let numHtml = "";
-                if(isP && !isV && uL) {
+                if(isP && !isV) {
+                    // Planda olanları başlanğıc nöqtəsinə görə sıralayırıq
                     let currentPlan = data.filter(x => dP[x['SubRetailer Draw ID']] && !vH[x['SubRetailer Draw ID']]);
                     currentPlan.sort((a,b) => {
-                        return map.distance(uL, [parseFloat(a.Latitude?.replace(',','.')), parseFloat(a.Longitude?.replace(',','.'))]) - 
-                               map.distance(uL, [parseFloat(b.Latitude?.replace(',','.')), parseFloat(b.Longitude?.replace(',','.'))]);
+                        let posA = L.latLng(parseFloat(a.Latitude?.replace(',','.')), parseFloat(a.Longitude?.replace(',','.')));
+                        let posB = L.latLng(parseFloat(b.Latitude?.replace(',','.')), parseFloat(b.Longitude?.replace(',','.')));
+                        return map.distance(uL, posA) - map.distance(uL, posB);
                     });
                     let idx = currentPlan.findIndex(x => x['SubRetailer Draw ID'] === id);
                     if(idx !== -1) numHtml = `<b class="route-num">${idx + 1}</b>`;
                 }
 
-                // MARKER SÜRÜŞMƏSİNİN HƏLLİ (iconAnchor tənzimləndi)
                 const mIcon = L.divIcon({
                     className: '', 
                     html: `<div style="background:${col}" class="marker-pin"></div>${numHtml}`, 
                     iconSize: [30, 42],
-                    iconAnchor: [15, 42], // Markerin aşağı ucu tam koordinatın üstündə sabit qalır
+                    iconAnchor: [15, 42],
                     popupAnchor: [0, -40]
                 });
 
@@ -163,7 +164,7 @@
         const p = m.pData, id = p.id;
         const isP = dP[id], isV = vH[id];
         const lastDate = isV ? vH[id] : "Yoxdur";
-        let distText = uL ? `<div class="dist-info">Məsafə: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km</div>` : "";
+        let distText = `<div class="dist-info">Başlanğıcdan: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km</div>`;
 
         const h = `
             <div class="pop-card">
@@ -194,7 +195,7 @@
     window.clearCurrentPlan = () => {
         const count = Object.keys(dP).length;
         if(count === 0) return alert("Planda təmizlənəcək nöqtə yoxdur.");
-        if(confirm(`Plandakı ${count} nöqtə silinsin? (Ziyarət edilənlərə toxunulmayacaq)`)) {
+        if(confirm(`Plandakı ${count} nöqtə silinsin?`)) {
             dP = {}; 
             localStorage.setItem('dP', JSON.stringify(dP));
             refreshMap();
@@ -224,11 +225,11 @@
     }
 
     window.showMyRoute = () => {
-        if(!uL) { findMe(); alert("Məkan təyin edilir, yenidən basın."); return; }
         let plan = dPts.filter(m => dP[m.pData.id] && !vH[m.pData.id]);
         if(plan.length === 0) return alert("Planda nöqtə yoxdur!");
         document.getElementById('filter').value = 'plan';
         filterM();
+        // Cari seçilmiş başlanğıc nöqtəsinə görə sıralama
         plan.sort((a,b) => map.distance(a.getLatLng(), uL) - map.distance(b.getLatLng(), uL));
         map.setView(plan[0].getLatLng(), 15);
         showP(plan[0]);
@@ -248,17 +249,8 @@
         link.click();
     };
 
-    function findN() {
-        if(!uL) return findMe();
-        let p = dPts.filter(m => !vH[m.pData.id]);
-        if(!p.length) return;
-        p.sort((a,b) => map.distance(a.getLatLng(), uL) - map.distance(b.getLatLng(), uL));
-        map.setView(p[0].getLatLng(), 16);
-        showP(p[0]);
-    }
-
     function clearData() { 
-        if(confirm("Bütün məlumatlar (CSV və Tarixçə) silinsin?")) { 
+        if(confirm("Bütün məlumatlar silinsin?")) { 
             localStorage.clear(); 
             location.reload(); 
         } 
@@ -266,7 +258,7 @@
 
     document.getElementById('search').oninput = filterM;
     const saved = localStorage.getItem('lastC'); 
-    if(saved) process(JSON.parse(saved), false);
+    if(saved) process(JSON.parse(saved), false); else setInitialLocation();
 </script>
 </body>
 </html>

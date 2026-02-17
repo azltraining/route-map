@@ -7,44 +7,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
         :root { --p: #003344; --s: #fdcb6e; --v: #00b894; --bg: #f4f7f6; --c: #ffffff; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; height: -webkit-fill-available; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: var(--bg); }
-        body { display: flex; flex-direction: column; min-height: 100vh; min-height: -webkit-fill-available; }
-        #header { background: var(--c); padding: 10px 10px 12px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1001; flex-shrink: 0; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; height: -webkit-fill-available; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); }
+        body { display: flex; flex-direction: column; min-height: 100vh; }
+        #header { background: var(--c); padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1001; flex-shrink: 0; }
         .row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; width: 100%; }
         .row:last-child { margin-bottom: 0; }
         .stat-badge { background: #eee; padding: 4px 8px; border-radius: 15px; font-size: 11px; font-weight: bold; color: var(--p); white-space: nowrap; }
-        input { flex: 1.5; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; min-width: 0; -webkit-appearance: none; }
-        select { flex: 1; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; background-color: #fff; cursor: pointer; -webkit-appearance: none; }
-        .btn-csv { background: var(--p); color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-        .icon-btn { border: 1.5px solid #e0e0e0; background: white; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--p); flex-shrink: 0; }
-        .btn-route { background: #6c5ce7; color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; border: none; }
-        .btn-clear-plan { background: #e67e22; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 16px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        input { flex: 1.5; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; }
+        select { flex: 1; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; background: #fff; cursor: pointer; }
+        .btn-csv { background: var(--p); color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .icon-btn { border: 1.5px solid #e0e0e0; background: white; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--p); flex-shrink: 0; cursor: pointer; }
+        .btn-route { background: #6c5ce7; color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; }
+        .btn-clear-plan { background: #e67e22; color: white; border: none; width: 38px; height: 38px; border-radius: 8px; cursor: pointer; }
         #map { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
-        .copyright-overlay { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.85); padding: 4px 12px; border-radius: 20px; font-size: 10px; color: #333; font-weight: 500; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        
-        .marker-pin { 
-            width: 32px; height: 32px; border-radius: 50% 50% 50% 0; 
-            position: absolute; transform: rotate(-45deg); 
-            left: 50%; top: 50%; margin: -16px 0 0 -16px; 
-            border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            display: flex; align-items: center; justify-content: center;
-        }
-        .marker-pin span { 
-            transform: rotate(45deg); 
-            color: #000; 
-            font-weight: bold; font-size: 13px; font-family: sans-serif;
-            pointer-events: none;
-        }
-
+        .marker-pin { width: 32px; height: 32px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -16px 0 0 -16px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; }
+        .marker-pin span { transform: rotate(45deg); color: #000; font-weight: bold; font-size: 13px; pointer-events: none; }
         .pop-card { text-align: center; min-width: 170px; }
         .pop-card b { font-size: 15px; color: var(--p); display: block; margin-bottom: 2px; }
-        .pop-info { font-size: 11px; color: #666; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
         .dist-info { background: #f0f7ff; color: #007aff; padding: 4px; border-radius: 6px; font-weight: bold; margin-bottom: 6px; font-size: 10px; }
         .waze-btn { background: #31CCFF; color: white !important; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-radius: 8px; font-weight: bold; margin-top: 6px; font-size: 13px; }
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 8px; }
         .btn-s { border: none; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 10px; color: white; cursor: pointer; }
-        
-        .custom-coord-input { max-width: 120px; padding: 8px !important; border-color: #6c5ce7 !important; display: none; }
+        .custom-wrapper { position: relative; display: none; align-items: center; flex: 1; }
+        .custom-wrapper input { width: 100%; padding-right: 30px; border-color: #6c5ce7; }
+        .back-btn { position: absolute; right: 8px; cursor: pointer; color: #ff7675; font-weight: bold; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -53,33 +39,39 @@
     <div class="row">
         <label class="btn-csv"><i class="fa-solid fa-file-upload"></i> CSV <input type="file" id="csvFile" style="display:none" accept=".csv"></label>
         
-        <div style="display: flex; gap: 4px; align-items: center;">
-            <select id="startPoint" onchange="checkCustom('start')" style="max-width: 110px; border-color: #6c5ce7;">
+        <div style="display: flex; gap: 4px; flex: 1;">
+            <select id="startPoint" onchange="checkCustom('start')">
                 <option value="" disabled selected hidden>Başlanğıc</option>
                 <option value="40.376407,49.862726">Ofis</option>
                 <option value="40.379146,49.861340">Parking</option>
                 <option value="40.396275,49.816170">Fortuna</option>
                 <option value="custom">Xüsusi...</option>
             </select>
-            <input type="text" id="startCustom" class="custom-coord-input" placeholder="Lat, Lng" oninput="updateRouteCalculations()">
+            <div id="startWrap" class="custom-wrapper">
+                <input type="text" id="startCustom" placeholder="Lat, Lng" oninput="updateRouteCalculations()">
+                <span class="back-btn" onclick="resetSelect('start')">✕</span>
+            </div>
         </div>
 
-        <div style="display: flex; gap: 4px; align-items: center;">
-            <select id="endPoint" onchange="checkCustom('end')" style="max-width: 110px; border-color: #00b894;">
+        <div style="display: flex; gap: 4px; flex: 1;">
+            <select id="endPoint" onchange="checkCustom('end')">
                 <option value="" disabled selected hidden>Dayanacaq</option>
                 <option value="40.412483,49.986298">Elman</option>
                 <option value="40.412663,49.818919">Murad</option>
                 <option value="40.452347,49.779457">Səxavət</option>
                 <option value="custom">Xüsusi...</option>
             </select>
-            <input type="text" id="endCustom" class="custom-coord-input" placeholder="Lat, Lng" oninput="updateRouteCalculations()">
+            <div id="endWrap" class="custom-wrapper">
+                <input type="text" id="endCustom" placeholder="Lat, Lng" oninput="updateRouteCalculations()">
+                <span class="back-btn" onclick="resetSelect('end')">✕</span>
+            </div>
         </div>
 
-        <button class="btn-route" onclick="showMyRoute()"><i class="fa-solid fa-route"></i> Yolu Göstər</button>
-        <div style="flex:1"></div>
+        <button class="btn-route" onclick="showMyRoute()">Yolu Göstər</button>
+        <div style="flex-grow:0.1"></div>
         <button class="btn-clear-plan" onclick="clearCurrentPlan()" title="Planı Təmizlə"><i class="fa-solid fa-calendar-xmark"></i></button>
-        <button class="icon-btn" onclick="exportReport()" title="Hesabat"><i class="fa-solid fa-file-export"></i></button>
-        <button class="icon-btn" onclick="clearData()" title="Sıfırla"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="icon-btn" onclick="exportReport()"><i class="fa-solid fa-file-export"></i></button>
+        <button class="icon-btn" onclick="clearData()"><i class="fa-solid fa-trash-can"></i></button>
     </div>
     <div class="row">
         <div class="stat-badge" id="counter">Say: 0</div>
@@ -93,9 +85,7 @@
     </div>
 </div>
 
-<div id="map">
-    <div class="copyright-overlay">© This application is created by AZL Training</div>
-</div>
+<div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -107,132 +97,94 @@
 
     function checkCustom(type) {
         const sel = document.getElementById(type + 'Point');
-        const inp = document.getElementById(type + 'Custom');
+        const wrap = document.getElementById(type + 'Wrap');
         if (sel.value === 'custom') {
             sel.style.display = 'none';
-            inp.style.display = 'block';
-            inp.focus();
+            wrap.style.display = 'flex';
         }
         updateRouteCalculations();
     }
 
-    function setPoints() {
-        const getCoord = (type) => {
-            const sel = document.getElementById(type + 'Point');
-            const inp = document.getElementById(type + 'Custom');
-            if (sel.value === 'custom') return inp.value;
-            return sel.value;
-        };
+    function resetSelect(type) {
+        const sel = document.getElementById(type + 'Point');
+        const wrap = document.getElementById(type + 'Wrap');
+        const inp = document.getElementById(type + 'Custom');
+        sel.value = "";
+        sel.style.display = 'block';
+        wrap.style.display = 'none';
+        inp.value = "";
+        updateRouteCalculations();
+    }
 
-        const sVal = getCoord('start') || "40.379146,49.861340";
-        const eVal = getCoord('end') || "40.412483,49.986298";
-        
+    function setPoints() {
+        const getCoord = (t) => {
+            const sel = document.getElementById(t + 'Point');
+            return (sel.value === 'custom') ? document.getElementById(t + 'Custom').value : sel.value;
+        };
+        const sVal = getCoord('start') || "40.379,49.861", eVal = getCoord('end') || "40.412,49.986";
         try {
             const sC = sVal.split(','), eC = eVal.split(',');
             uL = L.latLng(parseFloat(sC[0]), parseFloat(sC[1]));
             eL = L.latLng(parseFloat(eC[0]), parseFloat(eC[1]));
-        } catch(e) { console.log("Koordinat xətası"); }
+        } catch(e) {}
     }
 
     const map = L.map('map', {zoomControl: false, attributionControl: false}).setView([40.4, 49.8], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     mLayer.addTo(map);
 
-    function updateRouteCalculations() {
-        isRouteCalculated = false;
-        setPoints();
-        refreshMap();
-    }
-
     document.getElementById('csvFile').onchange = (e) => {
         const f = e.target.files[0]; if(!f) return;
-        Papa.parse(f, {header: true, skipEmptyLines: true, complete: (r) => { process(r.data, true); }});
+        // Font (Azərbaycan hərfləri) problemini həll edən encoding əlavəsi:
+        Papa.parse(f, {header: true, skipEmptyLines: true, encoding: "UTF-8", complete: (r) => { process(r.data, true); }});
     };
-
-    function getOptimizedRoute(planData) {
-        if (planData.length === 0) return [];
-        let remaining = [...planData].map(item => ({
-            ...item, pos: L.latLng(parseFloat(item.Latitude?.replace(',','.')), parseFloat(item.Longitude?.replace(',','.')))
-        }));
-        remaining.sort((a, b) => map.distance(a.pos, eL) - map.distance(b.pos, eL));
-        let finalNode = remaining.shift();
-        let sorted = [];
-        let currentPos = uL;
-        while (remaining.length > 0) {
-            remaining.sort((a, b) => map.distance(currentPos, a.pos) - map.distance(currentPos, b.pos));
-            let next = remaining.shift();
-            sorted.push(next);
-            currentPos = next.pos;
-        }
-        sorted.push(finalNode);
-        return sorted;
-    }
 
     function process(data, s) {
         mLayer.clearLayers(); dPts.length = 0;
         if(s) localStorage.setItem('lastC', JSON.stringify(data));
         setPoints();
         const planList = data.filter(x => dP[x['SubRetailer Draw ID']] && !vH[x['SubRetailer Draw ID']]);
-        const optimizedPlan = getOptimizedRoute(planList);
+        let opt = []; 
+        if(planList.length > 0) {
+            let rem = planList.map(item => ({...item, pos: L.latLng(parseFloat(item.Latitude?.replace(',','.')), parseFloat(item.Longitude?.replace(',','.')))}));
+            rem.sort((a, b) => map.distance(a.pos, eL) - map.distance(b.pos, eL));
+            let fin = rem.shift(), cur = uL;
+            while(rem.length > 0) { rem.sort((a,b) => map.distance(cur, a.pos) - map.distance(cur, b.pos)); let next = rem.shift(); opt.push(next); cur = next.pos; }
+            opt.push(fin);
+        }
 
         data.forEach(r => {
             const lat = parseFloat(r.Latitude?.replace(',','.')), lng = parseFloat(r.Longitude?.replace(',','.'));
             if(!isNaN(lat) && !isNaN(lng)) {
-                const id = r['SubRetailer Draw ID'];
-                const isP = dP[id], isV = vH[id];
+                const id = r['SubRetailer Draw ID'], isP = dP[id], isV = vH[id];
                 const col = isV ? '#00b894' : (isP ? '#fdcb6e' : '#0984e3');
-                let numContent = "";
-                if(isP && !isV && isRouteCalculated) {
-                    let idx = optimizedPlan.findIndex(x => x['SubRetailer Draw ID'] === id);
-                    if(idx !== -1) numContent = `<span>${idx + 1}</span>`;
-                }
-                const mIcon = L.divIcon({
-                    className: '', 
-                    html: `<div style="background:${col}" class="marker-pin">${numContent}</div>`, 
-                    iconSize: [32, 48], iconAnchor: [16, 48], popupAnchor: [0, -45]
-                });
-                const m = L.marker([lat, lng], { icon: mIcon });
-                m.pData = { ...r, id };
-                m.on('click', () => showP(m));
-                dPts.push(m); m.addTo(mLayer);
+                let n = ""; if(isP && !isV && isRouteCalculated) { let i = opt.findIndex(x => x['SubRetailer Draw ID'] === id); if(i!==-1) n = `<span>${i+1}</span>`; }
+                const m = L.marker([lat, lng], {icon: L.divIcon({className:'', html:`<div style="background:${col}" class="marker-pin">${n}</div>`, iconSize:[32,48], iconAnchor:[16,48], popupAnchor:[0,-45]})});
+                m.pData = {...r, id}; m.on('click', () => showP(m)); dPts.push(m); m.addTo(mLayer);
             }
         });
         document.getElementById('counter').innerText = `Say: ${dPts.length}`;
-        if(dPts.length) {
-            document.getElementById('search').disabled = false; document.getElementById('filter').disabled = false;
-            if(s) map.fitBounds(new L.featureGroup(dPts).getBounds());
-        }
+        if(s && dPts.length) map.fitBounds(new L.featureGroup(dPts).getBounds());
     }
 
     function showP(m) {
-        const p = m.pData, id = p.id;
-        const isP = dP[id], isV = vH[id];
-        const lastDate = isV ? vH[id] : "Yoxdur";
-        let distHtml = "";
-        if(isRouteCalculated && isP && !isV) {
-            distHtml = `<div class="dist-info">Startdan: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km<br>Dayanacağa: ${(map.distance(m.getLatLng(), eL) / 1000).toFixed(2)} km</div>`;
-        }
-        const h = `<div class="pop-card"><b>${p.District || 'Adsız'}</b><div class="pop-info">ID: ${id}<br>Son: ${lastDate}</div>${distHtml}<div class="action-grid"><button onclick="mV('${id}')" class="btn-s" style="background:#00b894">Bitir</button><button onclick="tP('${id}')" class="btn-s" style="background:#fdcb6e; color:#333">${isP ? 'Çıx' : 'Plana sal'}</button></div><a href="waze://?ll=${p.Latitude},${p.Longitude}&navigate=yes" class="waze-btn"><i class="fa-brands fa-waze"></i> WAZE</a></div>`;
+        const p = m.pData, isP = dP[p.id], isV = vH[p.id];
+        let d = (isRouteCalculated && isP && !isV) ? `<div class="dist-info">S: ${(map.distance(m.getLatLng(), uL)/1000).toFixed(1)}km | D: ${(map.distance(m.getLatLng(), eL)/1000).toFixed(1)}km</div>` : "";
+        const h = `<div class="pop-card"><b>${p.District || 'Mağaza'}</b><div style="font-size:11px; margin-bottom:5px;">ID: ${p.id}</div>${d}<div class="action-grid"><button onclick="mV('${p.id}')" class="btn-s" style="background:#00b894">Bitir</button><button onclick="tP('${p.id}')" class="btn-s" style="background:#fdcb6e; color:#000">${isP?'Çıx':'Plana'}</button></div><a href="waze://?ll=${p.Latitude},${p.Longitude}&navigate=yes" class="waze-btn">WAZE</a></div>`;
         L.popup().setLatLng(m.getLatLng()).setContent(h).openOn(map);
     }
 
     window.mV = (id) => { vH[id] = new Date().toLocaleString('az-AZ'); localStorage.setItem('vH', JSON.stringify(vH)); map.closePopup(); refreshMap(); };
     window.tP = (id) => { if(dP[id]) delete dP[id]; else dP[id] = true; isRouteCalculated = false; localStorage.setItem('dP', JSON.stringify(dP)); map.closePopup(); refreshMap(); };
-    window.showMyRoute = () => {
-        const lastData = localStorage.getItem('lastC');
-        if(!lastData || Object.keys(dP).length === 0) return alert("Hər hansı bir məlumat və ya plan yoxdur!");
-        isRouteCalculated = true;
-        process(JSON.parse(lastData), false);
-        document.getElementById('filter').value = 'plan';
-        filterM();
-    };
+    window.showMyRoute = () => { if(Object.keys(dP).length===0) return alert("Plan boşdur!"); isRouteCalculated = true; const l = localStorage.getItem('lastC'); if(l) process(JSON.parse(l), false); document.getElementById('filter').value = 'plan'; filterM(); };
+    window.updateRouteCalculations = () => { isRouteCalculated = false; setPoints(); refreshMap(); };
+    function refreshMap() { const z = map.getZoom(), c = map.getCenter(), l = localStorage.getItem('lastC'); if(l) process(JSON.parse(l), false); map.setView(c, z); }
+    function filterM() { const s = document.getElementById('search').value.toLowerCase(), f = document.getElementById('filter').value; mLayer.clearLayers(); dPts.forEach(m => { const id = m.pData.id.toLowerCase(), n = (m.pData.District || "").toLowerCase(); if((id.includes(s) || n.includes(s)) && (f==='all' || (f==='plan'&&dP[m.pData.id]) || (f==='visited'&&vH[m.pData.id]) || (f==='pending'&&!vH[m.pData.id]))) m.addTo(mLayer); }); }
     window.clearCurrentPlan = () => { if(confirm("Plan silinsin?")) { dP = {}; isRouteCalculated = false; localStorage.setItem('dP', JSON.stringify(dP)); refreshMap(); } };
-    function refreshMap() { const curZoom = map.getZoom(), curCenter = map.getCenter(), lastData = localStorage.getItem('lastC'); if(lastData) process(JSON.parse(lastData), false); map.setView(curCenter, curZoom); }
-    function filterM() { const s = document.getElementById('search').value.toLowerCase(), f = document.getElementById('filter').value; mLayer.clearLayers(); let count = 0; dPts.forEach(m => { const id = m.pData.id.toLowerCase(), name = (m.pData.District || "").toLowerCase(); const matchS = id.includes(s) || name.includes(s); let matchF = (f === 'all') || (f === 'plan' && dP[m.pData.id]) || (f === 'visited' && vH[m.pData.id]) || (f === 'pending' && !vH[m.pData.id]); if(matchS && matchF) { m.addTo(mLayer); count++; } }); document.getElementById('counter').innerText = `Say: ${count}`; }
-    window.exportReport = () => { let csv = "data:text/csv;charset=utf-8,ID,Mağaza,Ziyarət Vaxtı\n"; const data = JSON.parse(localStorage.getItem('lastC') || "[]"); Object.keys(vH).forEach(id => { const shop = data.find(item => item['SubRetailer Draw ID'] === id); csv += `${id},${shop ? shop.District : "Naməlum"},${vH[id]}\n`; }); const link = document.createElement("a"); link.setAttribute("href", encodeURI(csv)); link.setAttribute("download", `Hesabat.csv`); link.click(); };
+    window.exportReport = () => { let c = "ID,Mağaza,Ziyarət\n"; const d = JSON.parse(localStorage.getItem('lastC')||"[]"); Object.keys(vH).forEach(id => { const s = d.find(x => x['SubRetailer Draw ID']===id); c += `${id},${s?s.District:"?"},${vH[id]}\n`; }); const a = document.createElement("a"); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(c); a.download = 'Hesabat.csv'; a.click(); };
     function clearData() { if(confirm("Sıfırlansın?")) { localStorage.clear(); location.reload(); } }
     document.getElementById('search').oninput = filterM;
-    const saved = localStorage.getItem('lastC'); if(saved) process(JSON.parse(saved), false); else setPoints();
+    const sav = localStorage.getItem('lastC'); if(sav) process(JSON.parse(sav), false); else setPoints();
 </script>
 </body>
 </html>

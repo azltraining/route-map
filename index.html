@@ -100,28 +100,32 @@
         Papa.parse(f, {header: true, skipEmptyLines: true, complete: (r) => { process(r.data, true); }});
     };
 
-    // Zəncirvari Optimallaşdırma Alqoritmi (Start -> Mağazalar -> Ev)
+    // TƏKMİLLƏŞDİRİLMİŞ ALQORİTM: Start -> Mağazalar -> Evə ən yaxın mağaza (FİNAL)
     function getOptimizedRoute(planData) {
         if (planData.length === 0) return [];
-        let sorted = [];
+        
         let remaining = [...planData].map(item => ({
             ...item,
             pos: L.latLng(parseFloat(item.Latitude?.replace(',','.')), parseFloat(item.Longitude?.replace(',','.')))
         }));
 
+        // 1. Evə (Dayanacağa) ən yaxın mağazanı tap və onu sonda saxlamaq üçün ayır
+        remaining.sort((a, b) => map.distance(a.pos, eL) - map.distance(b.pos, eL));
+        let finalNode = remaining.shift(); // Evə ən yaxın olanı siyahıdan çıxarırıq
+
+        // 2. Qalan mağazaları Startdan başlayaraq zəncirvari sırala
+        let sorted = [];
         let currentPos = uL;
 
         while (remaining.length > 0) {
-            // Hər addımda həm cari nöqtəyə yaxınlığı, həm də evə doğru irəliləməni nəzərə alırıq
-            remaining.sort((a, b) => {
-                let distA = map.distance(currentPos, a.pos) + (map.distance(a.pos, eL) * 0.3);
-                let distB = map.distance(currentPos, b.pos) + (map.distance(b.pos, eL) * 0.3);
-                return distA - distB;
-            });
+            remaining.sort((a, b) => map.distance(currentPos, a.pos) - map.distance(currentPos, b.pos));
             let next = remaining.shift();
             sorted.push(next);
             currentPos = next.pos;
         }
+
+        // 3. Ən sonda evə yaxın olan mağazanı əlavə et
+        sorted.push(finalNode);
         return sorted;
     }
 
@@ -173,7 +177,7 @@
         const p = m.pData, id = p.id;
         const isP = dP[id], isV = vH[id];
         const lastDate = isV ? vH[id] : "Yoxdur";
-        let distText = `<div class="dist-info">Başlanğıcdan: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km<br>Dayanacağa: ${(map.distance(m.getLatLng(), eL) / 1000).toFixed(2)} km</div>`;
+        let distText = `<div class="dist-info">Startdan: ${(map.distance(m.getLatLng(), uL) / 1000).toFixed(2)} km<br>Dayanacağa: ${(map.distance(m.getLatLng(), eL) / 1000).toFixed(2)} km</div>`;
 
         const h = `<div class="pop-card"><b>${p.District || 'Adsız'}</b><div class="pop-info">ID: ${id}<br>Son: ${lastDate}</div>${distText}<div class="action-grid"><button onclick="mV('${id}')" class="btn-s" style="background:#00b894">Bitir</button><button onclick="tP('${id}')" class="btn-s" style="background:#fdcb6e; color:#333">${isP ? 'Çıx' : 'Plana sal'}</button></div><a href="waze://?ll=${p.Latitude},${p.Longitude}&navigate=yes" class="waze-btn"><i class="fa-brands fa-waze"></i> WAZE</a></div>`;
         L.popup().setLatLng(m.getLatLng()).setContent(h).openOn(map);

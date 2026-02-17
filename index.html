@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
         :root { --p: #003344; --s: #fdcb6e; --v: #00b894; --bg: #f4f7f6; --c: #ffffff; }
-        
+
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             height: -webkit-fill-available; overflow: hidden; 
@@ -16,7 +16,10 @@
 
         body { display: flex; flex-direction: column; min-height: 100vh; min-height: -webkit-fill-available; }
         
-        #header { background: var(--c); padding: 10px 10px 12px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1001; flex-shrink: 0; }
+        #header { 
+            background: var(--c); padding: 10px 10px 12px 10px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1001; flex-shrink: 0; 
+        }
         .row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; width: 100%; }
         .row:last-child { margin-bottom: 0; }
         
@@ -27,8 +30,6 @@
         .btn-csv { background: var(--p); color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
         .icon-btn { border: 1.5px solid #e0e0e0; background: white; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--p); flex-shrink: 0; }
         .btn-route { background: #6c5ce7; color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; border: none; }
-        
-        /* Yeni Təmizləmə Düyməsi */
         .btn-clear-plan { background: #e67e22; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 16px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
 
         #map { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
@@ -58,7 +59,7 @@
         <div style="flex:1"></div>
         <button class="btn-clear-plan" onclick="clearCurrentPlan()" title="Planı Təmizlə"><i class="fa-solid fa-calendar-xmark"></i></button>
         <button class="icon-btn" onclick="exportReport()" title="Hesabat Yüklə"><i class="fa-solid fa-file-export"></i></button>
-        <button class="icon-btn" onclick="clearData()" title="Hər şeyi Sıfırla"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="icon-btn" onclick="clearData()" title="Bütün məlumatlar (CSV və Tarixçə) silinsin?"><i class="fa-solid fa-trash-can"></i></button>
     </div>
     <div class="row">
         <div class="stat-badge" id="counter">Say: 0</div>
@@ -86,7 +87,7 @@
     let uL = null, uM = null, mLayer = L.layerGroup(), dPts = [];
     let vH = JSON.parse(localStorage.getItem('vH')) || {}; 
     let dP = JSON.parse(localStorage.getItem('dP')) || {}; 
-    
+
     function fixVH() {
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -134,9 +135,16 @@
                     if(idx !== -1) numHtml = `<b class="route-num">${idx + 1}</b>`;
                 }
 
-                const m = L.marker([lat, lng], {
-                    icon: L.divIcon({className:'', html:`<div style="background:${col}" class="marker-pin"></div>${numHtml}`, iconSize:[30,42]})
+                // MARKER SÜRÜŞMƏSİNİN HƏLLİ (iconAnchor tənzimləndi)
+                const mIcon = L.divIcon({
+                    className: '', 
+                    html: `<div style="background:${col}" class="marker-pin"></div>${numHtml}`, 
+                    iconSize: [30, 42],
+                    iconAnchor: [15, 42], // Markerin aşağı ucu tam koordinatın üstündə sabit qalır
+                    popupAnchor: [0, -40]
                 });
+
+                const m = L.marker([lat, lng], { icon: mIcon });
                 m.pData = { ...r, id };
                 m.on('click', () => showP(m));
                 dPts.push(m); m.addTo(mLayer);
@@ -183,12 +191,11 @@
         refreshMap();
     };
 
-    // YALNIZ PLANI TƏMİZLƏYƏN FUNKSİYA
     window.clearCurrentPlan = () => {
         const count = Object.keys(dP).length;
         if(count === 0) return alert("Planda təmizlənəcək nöqtə yoxdur.");
         if(confirm(`Plandakı ${count} nöqtə silinsin? (Ziyarət edilənlərə toxunulmayacaq)`)) {
-            dP = {}; // Plan siyahısını boşalt
+            dP = {}; 
             localStorage.setItem('dP', JSON.stringify(dP));
             refreshMap();
         }
@@ -196,7 +203,8 @@
 
     function refreshMap() {
         const curZoom = map.getZoom(), curCenter = map.getCenter();
-        process(JSON.parse(localStorage.getItem('lastC')), false);
+        const lastData = localStorage.getItem('lastC');
+        if(lastData) process(JSON.parse(lastData), false);
         map.setView(curCenter, curZoom);
         map.closePopup();
     }
@@ -249,9 +257,16 @@
         showP(p[0]);
     }
 
-    function clearData() { if(confirm("Bütün məlumatlar (CSV və Tarixçə) silinsin?")) { localStorage.clear(); location.reload(); } }
+    function clearData() { 
+        if(confirm("Bütün məlumatlar (CSV və Tarixçə) silinsin?")) { 
+            localStorage.clear(); 
+            location.reload(); 
+        } 
+    }
+
     document.getElementById('search').oninput = filterM;
-    const saved = localStorage.getItem('lastC'); if(saved) process(JSON.parse(saved), false);
+    const saved = localStorage.getItem('lastC'); 
+    if(saved) process(JSON.parse(saved), false);
 </script>
 </body>
 </html>

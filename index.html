@@ -86,7 +86,7 @@
 </div>
 
 <div id="map">
-    <div class="copyright-tag">© This application created by Elman Huseynov</div>
+    <div class="copyright-tag">© Bu application Elman Huseynov tərəfindən yaradılmışdır</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -156,22 +156,23 @@
                 ...item, pos: L.latLng(parseFloat(item.Latitude?.replace(',','.')), parseFloat(item.Longitude?.replace(',','.')))
             }));
 
-            // 1. ADDIM: Başlanğıc nöqtəsinə (uL) ƏN UZAQ olan mağazanı tapırıq
-            rem.sort((a, b) => map.distance(uL, b.pos) - map.distance(uL, a.pos));
+            // MƏNTİQ: Dayanacaqdan (eL - evdən) ƏN UZAQ olan mağazadan başlayırıq
+            rem.sort((a, b) => map.distance(eL, b.pos) - map.distance(eL, a.pos));
+            
             let firstNode = rem.shift();
             opt.push(firstNode);
             let cur = firstNode.pos;
 
-            // 2. ADDIM: Qalan mağazaları dayanacağa (eL) yaxınlaşmaq şərti ilə sıralayırıq
+            // Qalanları evə yaxınlaşaraq sıralayırıq
             while(rem.length > 0) {
                 rem.sort((a, b) => {
-                    let dToNextA = map.distance(cur, a.pos);
-                    let dToNextB = map.distance(cur, b.pos);
-                    let dToFinalA = map.distance(eL, a.pos);
-                    let dToFinalB = map.distance(eL, b.pos);
+                    let distToA = map.distance(cur, a.pos);
+                    let distToB = map.distance(cur, b.pos);
+                    let finalA = map.distance(eL, a.pos);
+                    let finalB = map.distance(eL, b.pos);
                     
-                    // Həm cari nöqtəyə yaxın olsun, həm də son hədəfə (eL) meyillənsin
-                    return (dToNextA + dToFinalA) - (dToNextB + dToFinalB);
+                    // Cari nöqtəyə yaxınlıq və evə olan məsafənin azalması
+                    return (distToA + finalA) - (distToB + finalB);
                 });
                 let next = rem.shift();
                 opt.push(next);
@@ -207,7 +208,7 @@
     function showP(m) {
         const p = m.pData, id = p.id, isP = dP[id];
         let d = (isRouteCalculated && isP) ? 
-            `<div class="dist-info">Startdan: ${(map.distance(m.getLatLng(), uL)/1000).toFixed(1)}km | Sona: ${(map.distance(m.getLatLng(), eL)/1000).toFixed(1)}km</div>` : "";
+            `<div class="dist-info">Evə qalan: ${(map.distance(m.getLatLng(), eL)/1000).toFixed(1)}km</div>` : "";
         
         const h = `
             <div class="pop-card">

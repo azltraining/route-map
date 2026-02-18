@@ -20,19 +20,13 @@
         .btn-route { background: #6c5ce7; color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; }
         .btn-clear-plan { background: #e67e22; color: white; border: none; width: 38px; height: 38px; border-radius: 8px; cursor: pointer; }
         #map { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
-        
-        /* Müəllif yazısı - Bold silindi */
         .copyright-tag { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.85); padding: 5px 15px; border-radius: 20px; font-size: 11px; color: #333; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; font-weight: normal; }
-
         .marker-pin { width: 32px; height: 32px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -16px 0 0 -16px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; }
         .marker-pin span { transform: rotate(45deg); color: #000; font-weight: bold; font-size: 13px; pointer-events: none; }
-        
         .pop-card { text-align: center; min-width: 170px; padding: 5px; }
         .pop-card b { font-size: 14px; color: var(--p); display: block; margin-bottom: 2px; }
-        .dist-info { background: #f0f7ff; color: #007aff; padding: 5px; border-radius: 6px; font-weight: bold; margin-bottom: 8px; font-size: 10px; line-height: 1.3; }
         .action-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
         .btn-s { border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 12px; color: white; cursor: pointer; width: 100%; }
-        
         .custom-wrapper { position: relative; display: none; align-items: center; flex: 1; }
         .custom-wrapper input { width: 100%; padding-right: 30px; border-color: #6c5ce7; }
         .back-btn { position: absolute; right: 8px; cursor: pointer; color: #ff7675; font-weight: bold; font-size: 16px; padding: 5px; }
@@ -151,7 +145,6 @@
             opt = planList.map(item => ({
                 ...item, pos: L.latLng(parseFloat(item.Latitude?.replace(',','.')), parseFloat(item.Longitude?.replace(',','.')))
             }));
-            // Qorunan Marşrut Məntiqi: Evə ən uzaqdan başlayaraq sırala
             opt.sort((a, b) => map.distance(eL, b.pos) - map.distance(eL, a.pos));
         }
 
@@ -176,7 +169,7 @@
                 dPts.push(m);
             }
         });
-        filterM(); // Filtrləri tətbiq et
+        filterM();
         if(s && dPts.length) map.fitBounds(new L.featureGroup(dPts).getBounds());
     }
 
@@ -196,7 +189,7 @@
     window.showMyRoute = () => { 
         if(Object.keys(dP).length===0) return alert("Planda mağaza yoxdur!"); 
         isRouteCalculated = true; 
-        document.getElementById('filter').value = 'plan'; // Filtri "Gediləcək" et
+        document.getElementById('filter').value = 'plan'; 
         refreshMap(); 
     };
 
@@ -208,6 +201,7 @@
         map.setView(c, z); 
     }
 
+    // DÜZƏLİŞ EDİLMİŞ FİLTR FUNKSİYASI
     function filterM() {
         const s = document.getElementById('search').value.toLowerCase();
         const f = document.getElementById('filter').value;
@@ -220,8 +214,16 @@
             const isP = dP[m.pData.id];
 
             const matchSearch = id.includes(s) || name.includes(s);
-            // "Yolu Göstər" basılıbsa və ya filter "plan"dırsa, yalnız seçilənləri göstər
-            let matchFilter = (f === 'all' && !isRouteCalculated) || (f === 'plan') || (isRouteCalculated && isP);
+            
+            // Məntiqin düzəlişi:
+            // 1. Əgər 'plan' seçilibsə, yalnız planda olanları (isP) göstər
+            // 2. Əgər 'all' seçilibsə, hər şeyi göstər (lakin "Yolu Göstər" basılıbsa yalnız planı göstər)
+            let matchFilter = false;
+            if (f === 'plan') {
+                matchFilter = isP;
+            } else {
+                matchFilter = isRouteCalculated ? isP : true;
+            }
 
             if(matchSearch && matchFilter) {
                 m.addTo(mLayer);

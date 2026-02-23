@@ -26,9 +26,27 @@
         .pop-card { text-align: center; min-width: 170px; padding: 5px; }
         .pop-card b { font-size: 14px; color: var(--p); display: block; margin-bottom: 2px; }
         .action-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
-        .btn-s { border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 12px; color: white; cursor: pointer; width: 100%; }
-        /* Waze Düyməsi Stili */
-        .btn-waze { background: #33ccff; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
+        
+        /* DÜZƏLİŞ: Düymə ölçülərinin eyniləşdirilməsi */
+        .btn-s, .btn-waze { 
+            border: none; 
+            padding: 10px; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            font-size: 12px; 
+            cursor: pointer; 
+            width: 100%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 6px; 
+            text-decoration: none;
+            box-sizing: border-box;
+            height: 38px; /* Sabit hündürlük */
+        }
+        
+        .btn-waze { background: #33ccff; color: white; }
+        
         .custom-wrapper { position: relative; display: none; align-items: center; flex: 1; }
         .custom-wrapper input { width: 100%; padding-right: 30px; border-color: #6c5ce7; }
         .back-btn { position: absolute; right: 8px; cursor: pointer; color: #ff7675; font-weight: bold; font-size: 16px; padding: 5px; }
@@ -229,7 +247,6 @@
             if (f === 'plan') {
                 matchFilter = isP;
             } else {
-                // Əgər Hamısı seçilibsə, amma Yolu Göstər basılıbsa, yenə yalnız planı göstərsin
                 matchFilter = isRouteCalculated ? isP : true;
             }
 

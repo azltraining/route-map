@@ -27,6 +27,8 @@
         .pop-card b { font-size: 14px; color: var(--p); display: block; margin-bottom: 2px; }
         .action-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
         .btn-s { border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 12px; color: white; cursor: pointer; width: 100%; }
+        /* Waze Düyməsi Stili */
+        .btn-waze { background: #33ccff; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
         .custom-wrapper { position: relative; display: none; align-items: center; flex: 1; }
         .custom-wrapper input { width: 100%; padding-right: 30px; border-color: #6c5ce7; }
         .back-btn { position: absolute; right: 8px; cursor: pointer; color: #ff7675; font-weight: bold; font-size: 16px; padding: 5px; }
@@ -37,7 +39,6 @@
 <div id="header">
     <div class="row">
         <label class="btn-csv"><i class="fa-solid fa-file-upload"></i> CSV <input type="file" id="csvFile" style="display:none" accept=".csv"></label>
-        
         <div style="display: flex; gap: 4px; flex: 1;">
             <select id="startPoint" onchange="checkCustom('start')">
                 <option value="" disabled selected hidden>Başlanğıc</option>
@@ -51,7 +52,6 @@
                 <span class="back-btn" onclick="resetSelect('start')">✕</span>
             </div>
         </div>
-
         <div style="display: flex; gap: 4px; flex: 1;">
             <select id="endPoint" onchange="checkCustom('end')">
                 <option value="" disabled selected hidden>Dayanacaq</option>
@@ -65,7 +65,6 @@
                 <span class="back-btn" onclick="resetSelect('end')">✕</span>
             </div>
         </div>
-
         <button class="btn-route" onclick="showMyRoute()">Yolu Göstər</button>
         <button class="btn-clear-plan" onclick="clearCurrentPlan()" title="Planı Təmizlə"><i class="fa-solid fa-calendar-xmark"></i></button>
         <button class="icon-btn" onclick="clearData()" title="Sıfırla"><i class="fa-solid fa-trash-can"></i></button>
@@ -164,7 +163,7 @@
                         iconSize:[32,48], iconAnchor:[16,48], popupAnchor:[0,-45]
                     })
                 });
-                m.pData = {...r, id}; 
+                m.pData = {...r, id, lat, lng}; 
                 m.on('click', () => showP(m)); 
                 dPts.push(m);
             }
@@ -175,7 +174,20 @@
 
     function showP(m) {
         const p = m.pData, id = p.id, isP = dP[id];
-        const h = `<div class="pop-card"><b>${p.District}</b><div style="font-size:11px; margin-bottom:5px;">ID: ${id}</div><div class="action-grid"><button onclick="tP('${id}')" class="btn-s" style="background:${isP ? '#e67e22' : '#fdcb6e'}; color:#000">${isP ? 'Plandan sil' : 'Plana sal'}</button></div></div>`;
+        const wazeUrl = `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`;
+        const h = `
+            <div class="pop-card">
+                <b>${p.District}</b>
+                <div style="font-size:11px; margin-bottom:5px;">ID: ${id}</div>
+                <div class="action-grid">
+                    <button onclick="tP('${id}')" class="btn-s" style="background:${isP ? '#e67e22' : '#fdcb6e'}; color:#000">
+                        ${isP ? 'Plandan sil' : 'Plana sal'}
+                    </button>
+                    <a href="${wazeUrl}" target="_blank" class="btn-waze">
+                        <i class="fa-brands fa-waze"></i> Waze ilə get
+                    </a>
+                </div>
+            </div>`;
         L.popup().setLatLng(m.getLatLng()).setContent(h).openOn(map);
     }
 
@@ -201,7 +213,6 @@
         map.setView(c, z); 
     }
 
-    // DÜZƏLİŞ EDİLMİŞ FİLTR FUNKSİYASI
     function filterM() {
         const s = document.getElementById('search').value.toLowerCase();
         const f = document.getElementById('filter').value;
@@ -212,16 +223,13 @@
             const id = m.pData.id.toLowerCase();
             const name = (m.pData.District || "").toLowerCase();
             const isP = dP[m.pData.id];
-
             const matchSearch = id.includes(s) || name.includes(s);
             
-            // Məntiqin düzəlişi:
-            // 1. Əgər 'plan' seçilibsə, yalnız planda olanları (isP) göstər
-            // 2. Əgər 'all' seçilibsə, hər şeyi göstər (lakin "Yolu Göstər" basılıbsa yalnız planı göstər)
             let matchFilter = false;
             if (f === 'plan') {
                 matchFilter = isP;
             } else {
+                // Əgər Hamısı seçilibsə, amma Yolu Göstər basılıbsa, yenə yalnız planı göstərsin
                 matchFilter = isRouteCalculated ? isP : true;
             }
 
